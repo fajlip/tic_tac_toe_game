@@ -1,0 +1,26 @@
+name: tic_tac_toe_game
+version: "0.1.0"
+about: Todo Description
+args:
+    - hostType:
+        short: t
+        value_name: HOSTTYPE
+        help: Sets type of hosting for current application run {server, client}.
+        takes_value: true
+        required: true
+    - port:
+        short: p
+        value_name: PORT
+        help: Sets port on which the communication will be established [49152 – 65535]. When not specified first free port in that range will be set if host type is server.
+        takes_value: true
+    - ipAddr:
+        short: a
+        value_name: IPADDR
+        help: Sets ip address on which the communication will be established. Cannot be specified if host type is server.
+        takes_value: true
+    - startOrder:
+        short: s
+        value_name: STARTORDER
+        help: Sets prefered player order to start the game {first, second}. TODO - Random when players choose the same.
+        takes_value: true
+        required: true
