@@ -109,10 +109,9 @@ pub fn place_on_board(
 }
 
 fn get_oponent_start_order(start_order: StartOrder) -> StartOrder {
-    if start_order == StartOrder::First {
-        StartOrder::Second
-    } else {
-        StartOrder::First
+    match start_order {
+        StartOrder::First => StartOrder::Second,
+        _ => StartOrder::First,
     }
 }
 
