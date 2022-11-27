@@ -18,7 +18,7 @@ pub fn handle_host_type_communication(arguments: Arguments) {
             break;
         }
 
-        line = line.trim().to_string();
+        let line = line[0..bytes_read].trim().to_string();
 
         if line == HELP_COMMAND {
             print_game_help();
@@ -37,8 +37,6 @@ pub fn handle_host_type_communication(arguments: Arguments) {
         } else {
             host_type_object.send_message(line + "\n");
         }
-
-        line = String::new();
     }
 
     host_type_object.stop();
