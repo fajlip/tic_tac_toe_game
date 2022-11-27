@@ -78,14 +78,9 @@ impl Playboard {
         let diagonal_items = self.get_diagonal_items();
 
         // Check for win on rows, cols and diagonal.
-        if Self::check_if_same_symbols(row_items)
+        Self::check_if_same_symbols(row_items)
             || Self::check_if_same_symbols(col_items)
             || Self::check_if_same_symbols(diagonal_items)
-        {
-            return true;
-        }
-
-        false
     }
 
     // k zamysleni: drzet pocet plnych poli
