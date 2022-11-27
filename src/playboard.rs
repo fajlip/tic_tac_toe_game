@@ -54,41 +54,34 @@ impl Playboard {
             && self.grid[Self::i2d_into_1d(row - 1, col - 1)] == PlayBoardGridOptions::Free
     }
 
+    fn check_if_same_symbols(items: Vec<[PlayBoardGridOptions; PLAYBOARD_ROW_COL_SIZE]>) -> bool
+    {
+        for item in &items {
+            let tmp = item
+                .iter()
+                .zip(item.iter().skip(1))
+                .map(|(&x, &y)| x == y && x != PlayBoardGridOptions::Free)
+                .collect::<Vec<bool>>();
+
+            // todo: misto collect
+            if tmp.iter().all(|&i| i) {
+                return true;
+            }
+        }
+
+        false
+    }
+
     fn check_for_game_win(&self) -> bool {
         let row_items = self.get_row_items();
         let col_items = self.get_col_items();
         let diagonal_items = self.get_diagonal_items();
 
-        let check_if_same_symbols =
-            |items: Vec<[PlayBoardGridOptions; PLAYBOARD_ROW_COL_SIZE]>| -> bool {
-                for item in &items {
-                    let tmp = item
-                        .iter()
-                        .zip(item.iter().skip(1))
-                        .map(|(&x, &y)| x == y && x != PlayBoardGridOptions::Free)
-                        .collect::<Vec<bool>>();
-
-                    // todo: misto collect
-                    if tmp.iter().all(|&i| i) {
-                        return true;
-                    }
-                }
-
-                false
-            };
-
-        // Check for win on rows.
-        if check_if_same_symbols(row_items) {
-            return true;
-        }
-
-        // check for win on cols.
-        if check_if_same_symbols(col_items) {
-            return true;
-        }
-
-        // check for win on diagonal.
-        if check_if_same_symbols(diagonal_items) {
+        // Check for win on rows, cols and diagonal.
+        if Self::check_if_same_symbols(row_items)
+            || Self::check_if_same_symbols(col_items)
+            || Self::check_if_same_symbols(diagonal_items)
+        {
             return true;
         }
 
