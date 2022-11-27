@@ -9,13 +9,16 @@ mod playboard;
 mod settings;
 
 mod cli_args_processing;
-use cli_args_processing::{process_cli_arguments, Arguments};
+use cli_args_processing::{process_cli_arguments, Arguments, InvalidArgument};
 
 mod host_type_communication_handler;
 use host_type_communication_handler::handle_host_type_communication;
 
 fn main() {
-    let arguments: Arguments = process_cli_arguments();
+    let arguments: Arguments = match process_cli_arguments() {
+        Ok(arguments) => arguments,
+        Err(InvalidArgument) => std::process::exit(1),
+    };
 
     handle_host_type_communication(arguments);
 }

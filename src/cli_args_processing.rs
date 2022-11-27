@@ -6,17 +6,23 @@ pub enum HostType {
     Server,
     Client,
 }
+pub struct InvalidArgument;
+
+fn handle_error(element: &str) -> InvalidArgument {
+    println!("{} is not specified correctly. Use -h for help.", element);
+    InvalidArgument
+}
 
 // Strum macros not used due to case insensitiveness.
 impl FromStr for HostType {
-    type Err = ();
+    type Err = InvalidArgument;
 
-    fn from_str(host_type: &str) -> Result<HostType, Self::Err> {
+    fn from_str(host_type: &str) -> Result<HostType, InvalidArgument> {
         // Do not respect letter case.
         match host_type.to_lowercase().as_str() {
             "server" => Ok(HostType::Server),
             "client" => Ok(HostType::Client),
-            _ => Err(()),
+            _ => Err(handle_error("Host type")),
         }
     }
 }
@@ -29,13 +35,13 @@ pub enum StartOrder {
 
 // Strum macros not used due to case insensitiveness.
 impl FromStr for StartOrder {
-    type Err = ();
+    type Err = InvalidArgument;
 
-    fn from_str(start_order: &str) -> Result<StartOrder, Self::Err> {
+    fn from_str(start_order: &str) -> Result<StartOrder, InvalidArgument> {
         match start_order.to_lowercase().as_str() {
             "first" => Ok(StartOrder::First),
             "second" => Ok(StartOrder::Second),
-            _ => Err(()),
+            _ => Err(handle_error("Start order")),
         }
     }
 }
@@ -48,50 +54,36 @@ pub struct Arguments {
     pub start_order: StartOrder,
 }
 
-pub fn process_cli_arguments() -> Arguments {
+pub fn process_cli_arguments() -> Result<Arguments, InvalidArgument> {
     let yaml = load_yaml!("settings/cli.yaml");
     let matches = App::from_yaml(yaml).get_matches();
 
-    fn print_error(element: &str) -> String {
-        format!("{} is not specified correctly. Use -h for help.", element)
+    let host_type: HostType = HostType::from_str(matches.value_of("hostType").unwrap())?;
+
+    let port: Option<u16> = matches.value_of("port").unwrap_or("_").parse::<u16>().ok();
+
+    if host_type != HostType::Server && port.is_none() {
+        return Err(handle_error("Host type and port combination"));
     }
 
-    let host_type: HostType = match HostType::from_str(matches.value_of("hostType").unwrap()) {
-        Ok(host_type) => host_type,
-        Err(_) => panic!("{}", print_error("Host type")),
-    };
-
-    let port: Option<u16> = match matches.value_of("port").unwrap_or("_").parse::<u16>() {
-        Ok(value) => Some(value),
-        Err(_) => None,
-    };
-
-    if host_type != HostType::Server && port == None {
-        panic!("{}", print_error("Port"))
-    }
-
-    let ip_addr: Option<IpAddr> = match matches.value_of("ipAddr").unwrap_or("_").parse::<IpAddr>()
-    {
-        Ok(value) => Some(value),
-        Err(_) => None,
-    };
+    let ip_addr: Option<IpAddr> = matches
+        .value_of("ipAddr")
+        .unwrap_or("_")
+        .parse::<IpAddr>()
+        .ok();
 
     if host_type == HostType::Client && ip_addr == None {
-        panic!("{}", print_error("Ip address"))
+        return Err(handle_error("Host type and IP address combination"));
     } else if host_type == HostType::Server && ip_addr != None {
-        println!("Ip address specified for server will be ignored. Invalid option.")
+        println!("Ip address specified for server will be ignored. Invalid option, but the show goes on!")
     }
 
-    let start_order: StartOrder =
-        match StartOrder::from_str(matches.value_of("startOrder").unwrap()) {
-            Ok(start_order) => start_order,
-            Err(_) => panic!("{}", print_error("Start order")),
-        };
+    let start_order: StartOrder = StartOrder::from_str(matches.value_of("startOrder").unwrap())?;
 
-    Arguments {
+    Ok(Arguments {
         host_type,
         port,
         ip_addr,
         start_order,
-    }
+    })
 }
