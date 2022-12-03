@@ -1,5 +1,5 @@
 use clap::App;
-use std::{net::IpAddr, str::FromStr, fmt};
+use std::{fmt, net::IpAddr, str::FromStr};
 
 enum ArgOpts {
     HostType,
@@ -78,9 +78,14 @@ pub fn process_cli_arguments() -> Result<Arguments, InvalidArgument> {
     let yaml = load_yaml!("settings/cli.yaml");
     let matches = App::from_yaml(yaml).get_matches();
 
-    let host_type: HostType = HostType::from_str(matches.value_of(ArgOpts::HostType.to_string()).unwrap())?;
+    let host_type: HostType =
+        HostType::from_str(matches.value_of(ArgOpts::HostType.to_string()).unwrap())?;
 
-    let port: Option<u16> = matches.value_of(ArgOpts::Port.to_string()).unwrap_or(&ArgOpts::Invalid.to_string()).parse::<u16>().ok();
+    let port: Option<u16> = matches
+        .value_of(ArgOpts::Port.to_string())
+        .unwrap_or(&ArgOpts::Invalid.to_string())
+        .parse::<u16>()
+        .ok();
 
     if host_type != HostType::Server && port.is_none() {
         return Err(handle_error("Host type and port combination"));
@@ -98,7 +103,8 @@ pub fn process_cli_arguments() -> Result<Arguments, InvalidArgument> {
         println!("Ip address specified for server will be ignored. Invalid option, but the show goes on!")
     }
 
-    let start_order: StartOrder = StartOrder::from_str(matches.value_of(ArgOpts::StartOrder.to_string()).unwrap())?;
+    let start_order: StartOrder =
+        StartOrder::from_str(matches.value_of(ArgOpts::StartOrder.to_string()).unwrap())?;
 
     Ok(Arguments {
         host_type,
