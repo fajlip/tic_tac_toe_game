@@ -85,13 +85,7 @@ impl Playboard {
 
     // k zamysleni: drzet pocet plnych poli
     fn check_for_full_playboard(&self) -> bool {
-        for index_grid in 0..self.grid.len() {
-            if self.grid[index_grid] == PlayBoardGridOptions::Free {
-                return false;
-            }
-        }
-
-        true
+        self.grid.iter().all(|&i| i != PlayBoardGridOptions::Free)
     }
 
     pub fn place_on_grid(&mut self, row: usize, col: usize, start_order: StartOrder) -> GameState {
