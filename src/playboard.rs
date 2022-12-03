@@ -47,15 +47,12 @@ impl Playboard {
     }
 
     fn check_validity_of_indexes(&self, row: usize, col: usize) -> bool {
-        row <= PLAYBOARD_ROW_COL_SIZE
-            && row > 0
-            && col <= PLAYBOARD_ROW_COL_SIZE
-            && col > 0
-            && self.grid[Self::i2d_into_1d(row - 1, col - 1)] == PlayBoardGridOptions::Free
+        row < PLAYBOARD_ROW_COL_SIZE
+            && col < PLAYBOARD_ROW_COL_SIZE
+            && self.grid[Self::i2d_into_1d(row, col)] == PlayBoardGridOptions::Free
     }
 
-    fn check_if_same_symbols(items: Vec<[PlayBoardGridOptions; PLAYBOARD_ROW_COL_SIZE]>) -> bool
-    {
+    fn check_if_same_symbols(items: Vec<[PlayBoardGridOptions; PLAYBOARD_ROW_COL_SIZE]>) -> bool {
         for item in &items {
             let tmp = item
                 .iter()
@@ -89,13 +86,15 @@ impl Playboard {
     }
 
     pub fn place_on_grid(&mut self, row: usize, col: usize, start_order: StartOrder) -> GameState {
+        // Players index from 1.
+        assert!(row > 0);
+        assert!(col > 0);
+        let row: usize = row - 1;
+        let col: usize = col - 1;
+
         if !self.check_validity_of_indexes(row, col) {
             return GameState::InvalidPlace;
         }
-
-        // Players index from 1.
-        let row = row - 1;
-        let col = col - 1;
 
         let player_playboard_grid_option = match start_order {
             StartOrder::First => PlayBoardGridOptions::X,
@@ -221,5 +220,159 @@ impl Playboard {
         grid_diagonal.push(anti_diagonal_values);
 
         grid_diagonal
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::playboard;
+    use playboard::*;
+
+    #[rustfmt::skip]
+    fn prepare_playboard() -> Playboard {
+        let mut playboard = Playboard::new();
+        playboard.grid = [
+            PlayBoardGridOptions::Free, PlayBoardGridOptions::X,    PlayBoardGridOptions::X,
+            PlayBoardGridOptions::X,    PlayBoardGridOptions::O,    PlayBoardGridOptions::O,
+            PlayBoardGridOptions::O,    PlayBoardGridOptions::Free, PlayBoardGridOptions::X,
+        ];
+
+        playboard
+    }
+
+    #[test]
+    fn test_new() {
+        let expected_result = [PlayBoardGridOptions::Free; PLAYBOARD_SIZE];
+
+        let result = Playboard::new();
+
+        assert_eq!(result.grid, expected_result);
+        assert_eq!(result.grid.len(), PLAYBOARD_SIZE);
+    }
+
+    #[test]
+    fn test_i2d_into_1d() {
+        assert_eq!(Playboard::i2d_into_1d(0, 0), 0);
+        assert_eq!(Playboard::i2d_into_1d(0, 2), 2);
+        assert_eq!(Playboard::i2d_into_1d(1, 0), 3);
+        assert_eq!(Playboard::i2d_into_1d(1, 1), 4);
+        assert_eq!(Playboard::i2d_into_1d(1, 2), 5);
+        assert_eq!(Playboard::i2d_into_1d(2, 0), 6);
+        assert_eq!(Playboard::i2d_into_1d(2, 1), 7);
+        assert_eq!(Playboard::i2d_into_1d(2, 2), 8);
+    }
+
+    #[test]
+    fn test_check_validity_of_indexes() {
+        let playboard = prepare_playboard();
+
+        // free fields
+        assert!(playboard.check_validity_of_indexes(0, 0));
+        assert!(playboard.check_validity_of_indexes(2, 1));
+        // invalid row
+        assert!(!playboard.check_validity_of_indexes(4, 0));
+        // invalid col
+        assert!(!playboard.check_validity_of_indexes(0, 4));
+        // occupied fields
+        assert!(!playboard.check_validity_of_indexes(0, 1));
+        assert!(!playboard.check_validity_of_indexes(1, 1));
+        assert!(!playboard.check_validity_of_indexes(1, 2));
+        assert!(!playboard.check_validity_of_indexes(2, 2));
+    }
+
+    #[test]
+    #[rustfmt::skip]
+    fn test_check_if_same_symbols() {
+        // Free option is not considered as same symbol 
+        assert!(!Playboard::check_if_same_symbols(vec![[PlayBoardGridOptions::Free, PlayBoardGridOptions::Free, PlayBoardGridOptions::Free]]));
+        
+        assert!(Playboard::check_if_same_symbols(vec![[PlayBoardGridOptions::X, PlayBoardGridOptions::X, PlayBoardGridOptions::X]]));
+        assert!(Playboard::check_if_same_symbols(vec![[PlayBoardGridOptions::O, PlayBoardGridOptions::O, PlayBoardGridOptions::O]]));
+
+        assert!(!Playboard::check_if_same_symbols(vec![[PlayBoardGridOptions::X, PlayBoardGridOptions::O, PlayBoardGridOptions::X]]));
+        assert!(!Playboard::check_if_same_symbols(vec![[PlayBoardGridOptions::O, PlayBoardGridOptions::O, PlayBoardGridOptions::X]]));
+        assert!(!Playboard::check_if_same_symbols(vec![[PlayBoardGridOptions::X, PlayBoardGridOptions::X, PlayBoardGridOptions::Free]]));
+        assert!(!Playboard::check_if_same_symbols(vec![[PlayBoardGridOptions::O, PlayBoardGridOptions::O, PlayBoardGridOptions::Free]]));
+    }
+
+    #[test]
+    fn test_check_for_game_win() {
+        // todo
+    }
+
+    #[test]
+    fn test_check_for_full_playboard() {
+        let mut playboard = prepare_playboard();
+
+        assert!(!playboard.check_for_full_playboard());
+
+        playboard.grid[0] = PlayBoardGridOptions::X;
+        assert!(!playboard.check_for_full_playboard());
+
+        playboard.grid[7] = PlayBoardGridOptions::O;
+        assert!(playboard.check_for_full_playboard());
+    }
+
+    #[test]
+    fn test_place_on_grid() {
+        // todo
+    }
+
+    #[test]
+    fn test_clear_board() {
+        let mut playboard = prepare_playboard();
+
+        let expected_result = [PlayBoardGridOptions::Free; PLAYBOARD_SIZE];
+
+        playboard.clear_board();
+
+        assert_eq!(playboard.grid, expected_result);
+    }
+
+    #[test]
+    #[rustfmt::skip]
+    fn test_get_row_items() {
+        let expected_result = vec![
+            [PlayBoardGridOptions::Free, PlayBoardGridOptions::X,    PlayBoardGridOptions::X],
+            [PlayBoardGridOptions::X,    PlayBoardGridOptions::O,    PlayBoardGridOptions::O],
+            [PlayBoardGridOptions::O,    PlayBoardGridOptions::Free, PlayBoardGridOptions::X],
+        ];
+        
+        let playboard = prepare_playboard();
+
+        let result = playboard.get_row_items();
+
+        assert_eq!(result, expected_result);
+    }
+
+    #[test]
+    #[rustfmt::skip]
+    fn test_get_col_items() {
+        let expected_result = vec![
+            [PlayBoardGridOptions::Free, PlayBoardGridOptions::X, PlayBoardGridOptions::O],
+            [PlayBoardGridOptions::X,    PlayBoardGridOptions::O, PlayBoardGridOptions::Free],
+            [PlayBoardGridOptions::X,    PlayBoardGridOptions::O, PlayBoardGridOptions::X],
+        ];
+        
+        let playboard = prepare_playboard();
+
+        let result = playboard.get_col_items();
+
+        assert_eq!(result, expected_result);
+    }
+
+    #[test]
+    #[rustfmt::skip]
+    fn test_get_diagonal_items() {
+        let expected_result = vec![
+            [PlayBoardGridOptions::Free, PlayBoardGridOptions::O, PlayBoardGridOptions::X],
+            [PlayBoardGridOptions::X,    PlayBoardGridOptions::O, PlayBoardGridOptions::O],
+        ];
+        
+        let playboard = prepare_playboard();
+
+        let result = playboard.get_diagonal_items();
+
+        assert_eq!(result, expected_result);
     }
 }
