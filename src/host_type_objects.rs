@@ -38,10 +38,18 @@ fn run_func_in_thread(
     Arc<AtomicBool>,
     Arc<AtomicBool>,
 ) {
+    let playboard: Playboard = match Playboard::new() {
+        Ok(playboard) => playboard,
+        Err(e) => {
+            println!("{}", e);
+            std::process::exit(1);
+        }
+    };
+
     let arc_stream = Arc::new(Mutex::new(stream));
     let arc_run_app = Arc::new(AtomicBool::new(true));
     let arc_run_game = Arc::new(AtomicBool::new(true));
-    let arc_playboard = Arc::new(Mutex::new(Playboard::new()));
+    let arc_playboard = Arc::new(Mutex::new(playboard));
     let arc_my_turn = Arc::new(AtomicBool::new(start_order == StartOrder::First));
     let arc_new_game_req = Arc::new(AtomicBool::new(false));
     let arc_new_game_desirable = Arc::new(AtomicBool::new(false));

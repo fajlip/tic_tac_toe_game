@@ -26,6 +26,7 @@ pub enum HostType {
     Server,
     Client,
 }
+
 pub struct InvalidArgument;
 
 fn handle_error(element: &str) -> InvalidArgument {

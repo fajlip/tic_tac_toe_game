@@ -39,21 +39,32 @@ pub struct Playboard {
     grid: [PlayboardGridOptions; PLAYBOARD_SIZE],
 }
 
-impl Playboard {
-    pub fn new() -> Self {
-        if PLAYBOARD_SIZE % 2 != 1 {
-            panic!("Invalid playboard size settings, must be odd number.");
-        }
+pub struct InvalidPlayboardSize<'a>
+{
+    pub error: &'a str,
+}
 
-        if PLAYBOARD_SIZE * PLAYBOARD_SIZE == PLAYBOARD_ROW_COL_SIZE {
-            panic!("Invalid playboard size settings, power of playboard row col size.");
+impl<'a> fmt::Display for InvalidPlayboardSize<'a> {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", self.error)
+    }
+}
+
+impl Playboard {
+    pub fn new() -> Result<Self, InvalidPlayboardSize<'static>> {
+
+        if PLAYBOARD_SIZE % 2 != 1 {
+            return Err(InvalidPlayboardSize {error: "Playboard size must be odd number."});
+        }
+        else if PLAYBOARD_ROW_COL_SIZE * PLAYBOARD_ROW_COL_SIZE != PLAYBOARD_SIZE {
+            return Err(InvalidPlayboardSize {error: "Playboard size does not correspond to playboard row and col size."});
         }
 
         // Initialize grid with free option.
         let grid: [PlayboardGridOptions; PLAYBOARD_SIZE] =
             [PlayboardGridOptions::Free; PLAYBOARD_SIZE];
 
-        Self { grid }
+        Ok(Self { grid })
     }
 
     fn i2d_into_1d(row: usize, col: usize) -> usize {
@@ -212,9 +223,26 @@ mod tests {
     use crate::playboard;
     use playboard::*;
 
+    #[test]
+    fn test_new() {
+        let expected_result = [PlayboardGridOptions::Free; PLAYBOARD_SIZE];
+
+        let result = match Playboard::new() {
+            Ok(playboard) => playboard,
+            Err(InvalidPlayboardSize) => {
+                assert!(false);
+                return;
+            }
+        };
+
+        assert_eq!(result.grid, expected_result);
+        assert_eq!(result.grid.len(), PLAYBOARD_SIZE);
+    }
+
     #[rustfmt::skip]
     fn prepare_playboard() -> Playboard {
-        let mut playboard = Playboard::new();
+        let mut playboard: Playboard;
+
         playboard.grid = [
             PlayboardGridOptions::Free, PlayboardGridOptions::X,    PlayboardGridOptions::X,
             PlayboardGridOptions::X,    PlayboardGridOptions::Free, PlayboardGridOptions::O,
@@ -224,15 +252,7 @@ mod tests {
         playboard
     }
 
-    #[test]
-    fn test_new() {
-        let expected_result = [PlayboardGridOptions::Free; PLAYBOARD_SIZE];
 
-        let result = Playboard::new();
-
-        assert_eq!(result.grid, expected_result);
-        assert_eq!(result.grid.len(), PLAYBOARD_SIZE);
-    }
 
     #[test]
     fn test_i2d_into_1d() {
