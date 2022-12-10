@@ -229,7 +229,7 @@ mod tests {
 
         let result = match Playboard::new() {
             Ok(playboard) => playboard,
-            Err(InvalidPlayboardSize) => {
+            Err(_) => {
                 assert!(false);
                 return;
             }
@@ -241,15 +241,14 @@ mod tests {
 
     #[rustfmt::skip]
     fn prepare_playboard() -> Playboard {
-        let mut playboard: Playboard;
-
-        playboard.grid = [
-            PlayboardGridOptions::Free, PlayboardGridOptions::X,    PlayboardGridOptions::X,
-            PlayboardGridOptions::X,    PlayboardGridOptions::Free, PlayboardGridOptions::O,
-            PlayboardGridOptions::O,    PlayboardGridOptions::Free, PlayboardGridOptions::X,
-        ];
-
-        playboard
+        Playboard {
+            grid:
+            [
+                PlayboardGridOptions::Free, PlayboardGridOptions::X,    PlayboardGridOptions::X,
+                PlayboardGridOptions::X,    PlayboardGridOptions::Free, PlayboardGridOptions::O,
+                PlayboardGridOptions::O,    PlayboardGridOptions::Free, PlayboardGridOptions::X,
+            ],
+        }
     }
 
 
