@@ -159,19 +159,7 @@ impl Playboard {
     // TODO: Predelat
 
     fn get_row_items(&self) -> Vec<[PlayBoardGridOptions; PLAYBOARD_ROW_COL_SIZE]> {
-        let mut grid_rows: Vec<[PlayBoardGridOptions; PLAYBOARD_ROW_COL_SIZE]> = Vec::new();
-
-        for index_row in 0..PLAYBOARD_ROW_COL_SIZE {
-            let mut row_values = [PlayBoardGridOptions::Free; PLAYBOARD_ROW_COL_SIZE];
-
-            for index_col in 0..PLAYBOARD_ROW_COL_SIZE {
-                row_values[index_col] = self.grid[Self::i2d_into_1d(index_row, index_col)];
-            }
-
-            grid_rows.push(row_values);
-        }
-
-        grid_rows
+        (*self.grid.array_chunks::<PLAYBOARD_ROW_COL_SIZE>().cloned().collect::<Vec<_>>()).to_vec()
     }
 
     fn get_col_items(&self) -> Vec<[PlayBoardGridOptions; PLAYBOARD_ROW_COL_SIZE]> {

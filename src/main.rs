@@ -1,6 +1,9 @@
+#![feature(array_chunks)]
+
 #[macro_use]
 extern crate clap;
 extern crate matrix_display;
+
 
 mod host_type_objects;
 mod host_type_objects_handlers;
