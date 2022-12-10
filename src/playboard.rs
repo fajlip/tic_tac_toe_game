@@ -1,6 +1,8 @@
 use crate::matrix_display;
 use matrix_display::*;
 
+use std::fmt;
+
 use crate::cli_args_processing::StartOrder;
 use crate::settings::playboard_options::{
     PLAYBOARD_COLOR_TEXT, PLAYBOARD_GRID_COLOR1, PLAYBOARD_GRID_COLOR2, PLAYBOARD_GRID_HEIGHT,
@@ -12,6 +14,16 @@ pub enum PlayBoardGridOptions {
     X,
     O,
     Free,
+}
+
+impl fmt::Display for PlayBoardGridOptions {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+       match *self {
+            PlayBoardGridOptions::X => write!(f, "X"),
+            PlayBoardGridOptions::O => write!(f, "O"),
+            PlayBoardGridOptions::Free => write!(f, " "),
+       }
+    }
 }
 
 #[derive(Debug, PartialEq)]
@@ -114,28 +126,12 @@ impl Playboard {
         }
     }
 
-    fn tranfer_playboard_grid_options_to_printable(&self) -> [char; PLAYBOARD_SIZE] {
-        let mut grid_printable: [char; PLAYBOARD_SIZE] = [' '; PLAYBOARD_SIZE];
-
-        for index_grid in 0..self.grid.len() {
-            let printable_symbol = match self.grid[index_grid] {
-                PlayBoardGridOptions::X => 'X',
-                PlayBoardGridOptions::O => 'O',
-                PlayBoardGridOptions::Free => ' ',
-            };
-
-            grid_printable[index_grid] = printable_symbol;
-        }
-
-        grid_printable
-    }
-
     pub fn display_board(&self) {
         let format = Format::new(PLAYBOARD_GRID_WIDTH, PLAYBOARD_GRID_HEIGHT);
 
-        let grid_printable = self.tranfer_playboard_grid_options_to_printable();
+        //let grid_printable = self.tranfer_playboard_grid_options_to_printable();
 
-        let board = grid_printable
+        let board = self.grid
             .iter()
             .enumerate()
             .map(|(i, x)| {
