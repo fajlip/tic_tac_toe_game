@@ -10,18 +10,18 @@ use crate::settings::playboard_options::{
 };
 
 #[derive(Copy, Clone, Eq, PartialEq, Debug)]
-pub enum PlayBoardGridOptions {
+pub enum PlayboardGridOptions {
     X,
     O,
     Free,
 }
 
-impl fmt::Display for PlayBoardGridOptions {
+impl fmt::Display for PlayboardGridOptions {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
        match *self {
-            PlayBoardGridOptions::X => write!(f, "X"),
-            PlayBoardGridOptions::O => write!(f, "O"),
-            PlayBoardGridOptions::Free => write!(f, " "),
+            PlayboardGridOptions::X => write!(f, "X"),
+            PlayboardGridOptions::O => write!(f, "O"),
+            PlayboardGridOptions::Free => write!(f, " "),
        }
     }
 }
@@ -36,7 +36,7 @@ pub enum GameState {
 
 #[derive(Debug, PartialEq)]
 pub struct Playboard {
-    grid: [PlayBoardGridOptions; PLAYBOARD_SIZE],
+    grid: [PlayboardGridOptions; PLAYBOARD_SIZE],
 }
 
 impl Playboard {
@@ -50,8 +50,8 @@ impl Playboard {
         }
 
         // Initialize grid with free option.
-        let grid: [PlayBoardGridOptions; PLAYBOARD_SIZE] =
-            [PlayBoardGridOptions::Free; PLAYBOARD_SIZE];
+        let grid: [PlayboardGridOptions; PLAYBOARD_SIZE] =
+            [PlayboardGridOptions::Free; PLAYBOARD_SIZE];
 
         Self { grid }
     }
@@ -63,15 +63,15 @@ impl Playboard {
     fn check_validity_of_indexes(&self, row: usize, col: usize) -> bool {
         row < PLAYBOARD_ROW_COL_SIZE
             && col < PLAYBOARD_ROW_COL_SIZE
-            && self.grid[Self::i2d_into_1d(row, col)] == PlayBoardGridOptions::Free
+            && self.grid[Self::i2d_into_1d(row, col)] == PlayboardGridOptions::Free
     }
 
-    fn check_if_same_symbols(items: Vec<[PlayBoardGridOptions; PLAYBOARD_ROW_COL_SIZE]>) -> bool {
+    fn check_if_same_symbols(items: Vec<[PlayboardGridOptions; PLAYBOARD_ROW_COL_SIZE]>) -> bool {
         for item in &items {
             let tmp = item
                 .iter()
                 .zip(item.iter().skip(1))
-                .map(|(&x, &y)| x == y && x != PlayBoardGridOptions::Free)
+                .map(|(&x, &y)| x == y && x != PlayboardGridOptions::Free)
                 .collect::<Vec<bool>>();
 
             // todo: misto collect
@@ -96,7 +96,7 @@ impl Playboard {
 
     // k zamysleni: drzet pocet plnych poli
     fn check_for_full_playboard(&self) -> bool {
-        self.grid.iter().all(|&i| i != PlayBoardGridOptions::Free)
+        self.grid.iter().all(|&i| i != PlayboardGridOptions::Free)
     }
 
     pub fn place_on_grid(&mut self, row: usize, col: usize, start_order: StartOrder) -> GameState {
@@ -111,8 +111,8 @@ impl Playboard {
         }
 
         let player_playboard_grid_option = match start_order {
-            StartOrder::First => PlayBoardGridOptions::X,
-            StartOrder::Second => PlayBoardGridOptions::O,
+            StartOrder::First => PlayboardGridOptions::X,
+            StartOrder::Second => PlayboardGridOptions::O,
         };
 
         self.grid[Self::i2d_into_1d(row, col)] = player_playboard_grid_option;
@@ -127,20 +127,20 @@ impl Playboard {
     }
 
     pub fn clear_board(&mut self) {
-        self.grid = [PlayBoardGridOptions::Free; PLAYBOARD_SIZE];
+        self.grid = [PlayboardGridOptions::Free; PLAYBOARD_SIZE];
     }
 
     // TODO: Predelat
 
-    fn get_row_items(&self) -> Vec<[PlayBoardGridOptions; PLAYBOARD_ROW_COL_SIZE]> {
+    fn get_row_items(&self) -> Vec<[PlayboardGridOptions; PLAYBOARD_ROW_COL_SIZE]> {
         (*self.grid.array_chunks::<PLAYBOARD_ROW_COL_SIZE>().cloned().collect::<Vec<_>>()).to_vec()
     }
 
-    fn get_col_items(&self) -> Vec<[PlayBoardGridOptions; PLAYBOARD_ROW_COL_SIZE]> {
-        let mut grid_cols: Vec<[PlayBoardGridOptions; PLAYBOARD_ROW_COL_SIZE]> = Vec::new();
+    fn get_col_items(&self) -> Vec<[PlayboardGridOptions; PLAYBOARD_ROW_COL_SIZE]> {
+        let mut grid_cols: Vec<[PlayboardGridOptions; PLAYBOARD_ROW_COL_SIZE]> = Vec::new();
 
         for index_col in 0..PLAYBOARD_ROW_COL_SIZE {
-            let mut col_values = [PlayBoardGridOptions::Free; PLAYBOARD_ROW_COL_SIZE];
+            let mut col_values = [PlayboardGridOptions::Free; PLAYBOARD_ROW_COL_SIZE];
 
             for index_row in 0..PLAYBOARD_ROW_COL_SIZE {
                 col_values[index_row] = self.grid[Self::i2d_into_1d(index_row, index_col)];
@@ -152,10 +152,10 @@ impl Playboard {
         grid_cols
     }
 
-    fn get_diagonal_items(&self) -> Vec<[PlayBoardGridOptions; PLAYBOARD_ROW_COL_SIZE]> {
-        let mut grid_diagonal: Vec<[PlayBoardGridOptions; PLAYBOARD_ROW_COL_SIZE]> = Vec::new();
+    fn get_diagonal_items(&self) -> Vec<[PlayboardGridOptions; PLAYBOARD_ROW_COL_SIZE]> {
+        let mut grid_diagonal: Vec<[PlayboardGridOptions; PLAYBOARD_ROW_COL_SIZE]> = Vec::new();
 
-        let mut main_diagonal_values = [PlayBoardGridOptions::Free; PLAYBOARD_ROW_COL_SIZE];
+        let mut main_diagonal_values = [PlayboardGridOptions::Free; PLAYBOARD_ROW_COL_SIZE];
         let mut main_diagnoal_array_index = 0;
         for index_row in 0..PLAYBOARD_ROW_COL_SIZE {
             for index_col in 0..PLAYBOARD_ROW_COL_SIZE {
@@ -169,7 +169,7 @@ impl Playboard {
 
         grid_diagonal.push(main_diagonal_values);
 
-        let mut anti_diagonal_values = [PlayBoardGridOptions::Free; PLAYBOARD_ROW_COL_SIZE];
+        let mut anti_diagonal_values = [PlayboardGridOptions::Free; PLAYBOARD_ROW_COL_SIZE];
         let mut anti_diagnoal_array_index = 0;
         for index_row in 0..PLAYBOARD_ROW_COL_SIZE {
             for index_col in 0..PLAYBOARD_ROW_COL_SIZE {
@@ -216,9 +216,9 @@ mod tests {
     fn prepare_playboard() -> Playboard {
         let mut playboard = Playboard::new();
         playboard.grid = [
-            PlayBoardGridOptions::Free, PlayBoardGridOptions::X,    PlayBoardGridOptions::X,
-            PlayBoardGridOptions::X,    PlayBoardGridOptions::Free, PlayBoardGridOptions::O,
-            PlayBoardGridOptions::O,    PlayBoardGridOptions::Free, PlayBoardGridOptions::X,
+            PlayboardGridOptions::Free, PlayboardGridOptions::X,    PlayboardGridOptions::X,
+            PlayboardGridOptions::X,    PlayboardGridOptions::Free, PlayboardGridOptions::O,
+            PlayboardGridOptions::O,    PlayboardGridOptions::Free, PlayboardGridOptions::X,
         ];
 
         playboard
@@ -226,7 +226,7 @@ mod tests {
 
     #[test]
     fn test_new() {
-        let expected_result = [PlayBoardGridOptions::Free; PLAYBOARD_SIZE];
+        let expected_result = [PlayboardGridOptions::Free; PLAYBOARD_SIZE];
 
         let result = Playboard::new();
 
@@ -268,15 +268,15 @@ mod tests {
     #[rustfmt::skip]
     fn test_check_if_same_symbols() {
         // Free option is not considered as same symbol:
-        assert!(!Playboard::check_if_same_symbols(vec![[PlayBoardGridOptions::Free, PlayBoardGridOptions::Free, PlayBoardGridOptions::Free]]));
+        assert!(!Playboard::check_if_same_symbols(vec![[PlayboardGridOptions::Free, PlayboardGridOptions::Free, PlayboardGridOptions::Free]]));
         
-        assert!(Playboard::check_if_same_symbols(vec![[PlayBoardGridOptions::X, PlayBoardGridOptions::X, PlayBoardGridOptions::X]]));
-        assert!(Playboard::check_if_same_symbols(vec![[PlayBoardGridOptions::O, PlayBoardGridOptions::O, PlayBoardGridOptions::O]]));
+        assert!(Playboard::check_if_same_symbols(vec![[PlayboardGridOptions::X, PlayboardGridOptions::X, PlayboardGridOptions::X]]));
+        assert!(Playboard::check_if_same_symbols(vec![[PlayboardGridOptions::O, PlayboardGridOptions::O, PlayboardGridOptions::O]]));
 
-        assert!(!Playboard::check_if_same_symbols(vec![[PlayBoardGridOptions::X, PlayBoardGridOptions::O, PlayBoardGridOptions::X]]));
-        assert!(!Playboard::check_if_same_symbols(vec![[PlayBoardGridOptions::O, PlayBoardGridOptions::O, PlayBoardGridOptions::X]]));
-        assert!(!Playboard::check_if_same_symbols(vec![[PlayBoardGridOptions::X, PlayBoardGridOptions::X, PlayBoardGridOptions::Free]]));
-        assert!(!Playboard::check_if_same_symbols(vec![[PlayBoardGridOptions::O, PlayBoardGridOptions::O, PlayBoardGridOptions::Free]]));
+        assert!(!Playboard::check_if_same_symbols(vec![[PlayboardGridOptions::X, PlayboardGridOptions::O, PlayboardGridOptions::X]]));
+        assert!(!Playboard::check_if_same_symbols(vec![[PlayboardGridOptions::O, PlayboardGridOptions::O, PlayboardGridOptions::X]]));
+        assert!(!Playboard::check_if_same_symbols(vec![[PlayboardGridOptions::X, PlayboardGridOptions::X, PlayboardGridOptions::Free]]));
+        assert!(!Playboard::check_if_same_symbols(vec![[PlayboardGridOptions::O, PlayboardGridOptions::O, PlayboardGridOptions::Free]]));
     }
 
     #[test]
@@ -290,13 +290,13 @@ mod tests {
 
         assert!(!playboard.check_for_full_playboard());
 
-        playboard.grid[0] = PlayBoardGridOptions::X;
+        playboard.grid[0] = PlayboardGridOptions::X;
         assert!(!playboard.check_for_full_playboard());
 
-        playboard.grid[4] = PlayBoardGridOptions::O;
+        playboard.grid[4] = PlayboardGridOptions::O;
         assert!(!playboard.check_for_full_playboard());
 
-        playboard.grid[7] = PlayBoardGridOptions::O;
+        playboard.grid[7] = PlayboardGridOptions::O;
         assert!(playboard.check_for_full_playboard());
     }
 
@@ -322,30 +322,30 @@ mod tests {
 
         // Placed but game running options:
         assert_eq!(playboard.place_on_grid(1, 1, StartOrder::Second), GameState::Placed);
-        assert_eq!(playboard.grid[0], PlayBoardGridOptions::O);
+        assert_eq!(playboard.grid[0], PlayboardGridOptions::O);
 
         assert_eq!(playboard.place_on_grid(3, 2, StartOrder::First), GameState::Placed);
-        assert_eq!(playboard.grid[7], PlayBoardGridOptions::X);
+        assert_eq!(playboard.grid[7], PlayboardGridOptions::X);
     }
 
     #[test]
     fn test_place_on_grid_game_ended() {
         let mut playboard = prepare_playboard();
-        playboard.grid[0] = PlayBoardGridOptions::O;
-        playboard.grid[7] = PlayBoardGridOptions::X;
+        playboard.grid[0] = PlayboardGridOptions::O;
+        playboard.grid[7] = PlayboardGridOptions::X;
 
         // Game not running anymore options:
         assert_eq!(playboard.place_on_grid(2, 2, StartOrder::Second), GameState::Draw);
-        assert_eq!(playboard.grid[4], PlayBoardGridOptions::O);
+        assert_eq!(playboard.grid[4], PlayboardGridOptions::O);
 
         // Winning in row.
-        playboard.grid[1] = PlayBoardGridOptions::O;
-        playboard.grid[2] = PlayBoardGridOptions::Free;
+        playboard.grid[1] = PlayboardGridOptions::O;
+        playboard.grid[2] = PlayboardGridOptions::Free;
         assert_eq!(playboard.place_on_grid(1, 3, StartOrder::Second), GameState::GameOver);
 
         // Winning in col.
-        playboard.grid[1] = PlayBoardGridOptions::X;
-        playboard.grid[4] = PlayBoardGridOptions::Free;
+        playboard.grid[1] = PlayboardGridOptions::X;
+        playboard.grid[4] = PlayboardGridOptions::Free;
         assert_eq!(playboard.place_on_grid(2, 2, StartOrder::First), GameState::GameOver);
     }
 
@@ -353,7 +353,7 @@ mod tests {
     fn test_clear_board() {
         let mut playboard = prepare_playboard();
 
-        let expected_result = [PlayBoardGridOptions::Free; PLAYBOARD_SIZE];
+        let expected_result = [PlayboardGridOptions::Free; PLAYBOARD_SIZE];
 
         playboard.clear_board();
 
@@ -364,9 +364,9 @@ mod tests {
     #[rustfmt::skip]
     fn test_get_row_items() {
         let expected_result = vec![
-            [PlayBoardGridOptions::Free, PlayBoardGridOptions::X,    PlayBoardGridOptions::X],
-            [PlayBoardGridOptions::X,    PlayBoardGridOptions::Free, PlayBoardGridOptions::O],
-            [PlayBoardGridOptions::O,    PlayBoardGridOptions::Free, PlayBoardGridOptions::X],
+            [PlayboardGridOptions::Free, PlayboardGridOptions::X,    PlayboardGridOptions::X],
+            [PlayboardGridOptions::X,    PlayboardGridOptions::Free, PlayboardGridOptions::O],
+            [PlayboardGridOptions::O,    PlayboardGridOptions::Free, PlayboardGridOptions::X],
         ];
         
         let playboard = prepare_playboard();
@@ -380,9 +380,9 @@ mod tests {
     #[rustfmt::skip]
     fn test_get_col_items() {
         let expected_result = vec![
-            [PlayBoardGridOptions::Free, PlayBoardGridOptions::X,    PlayBoardGridOptions::O],
-            [PlayBoardGridOptions::X,    PlayBoardGridOptions::Free, PlayBoardGridOptions::Free],
-            [PlayBoardGridOptions::X,    PlayBoardGridOptions::O,    PlayBoardGridOptions::X],
+            [PlayboardGridOptions::Free, PlayboardGridOptions::X,    PlayboardGridOptions::O],
+            [PlayboardGridOptions::X,    PlayboardGridOptions::Free, PlayboardGridOptions::Free],
+            [PlayboardGridOptions::X,    PlayboardGridOptions::O,    PlayboardGridOptions::X],
         ];
         
         let playboard = prepare_playboard();
@@ -396,8 +396,8 @@ mod tests {
     #[rustfmt::skip]
     fn test_get_diagonal_items() {
         let expected_result = vec![
-            [PlayBoardGridOptions::Free, PlayBoardGridOptions::Free, PlayBoardGridOptions::X],
-            [PlayBoardGridOptions::X,    PlayBoardGridOptions::Free, PlayBoardGridOptions::O],
+            [PlayboardGridOptions::Free, PlayboardGridOptions::Free, PlayboardGridOptions::X],
+            [PlayboardGridOptions::X,    PlayboardGridOptions::Free, PlayboardGridOptions::O],
         ];
         
         let playboard = prepare_playboard();
