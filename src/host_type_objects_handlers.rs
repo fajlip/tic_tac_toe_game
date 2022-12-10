@@ -5,7 +5,7 @@ use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
 use crate::cli_args_processing::StartOrder;
-use crate::playboard::{GameState, Playboard};
+use crate::playboard::{GameState, Playboard, display_board};
 use crate::settings::commands::*;
 use colored::Colorize;
 
@@ -93,7 +93,7 @@ pub fn place_on_board(
                 }
             }
 
-            guard_playboard.display_board();
+            display_board(guard_playboard);
         }
         None => {
             let msg = format!(

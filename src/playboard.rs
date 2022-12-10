@@ -1,7 +1,7 @@
 use crate::matrix_display;
 use matrix_display::*;
 
-use std::fmt;
+use std::{fmt, sync::MutexGuard};
 
 use crate::cli_args_processing::StartOrder;
 use crate::settings::playboard_options::{
@@ -126,28 +126,6 @@ impl Playboard {
         }
     }
 
-    pub fn display_board(&self) {
-        let format = Format::new(PLAYBOARD_GRID_WIDTH, PLAYBOARD_GRID_HEIGHT);
-
-        //let grid_printable = self.tranfer_playboard_grid_options_to_printable();
-
-        let board = self.grid
-            .iter()
-            .enumerate()
-            .map(|(i, x)| {
-                let mut color_grid = PLAYBOARD_GRID_COLOR1;
-                if i % 2 == 1 {
-                    color_grid = PLAYBOARD_GRID_COLOR2;
-                }
-                cell::Cell::new(*x, PLAYBOARD_COLOR_TEXT, color_grid)
-            })
-            .collect::<Vec<_>>();
-
-        let mut data = matrix::Matrix::new(PLAYBOARD_ROW_COL_SIZE, board);
-        let display = MatrixDisplay::new(&format, &mut data);
-        display.print(&mut std::io::stdout(), &style::BordersStyle::None);
-    }
-
     pub fn clear_board(&mut self) {
         self.grid = [PlayBoardGridOptions::Free; PLAYBOARD_SIZE];
     }
@@ -207,6 +185,26 @@ impl Playboard {
 
         grid_diagonal
     }
+}
+
+pub fn display_board(playboard: MutexGuard<Playboard>) {
+    let format = Format::new(PLAYBOARD_GRID_WIDTH, PLAYBOARD_GRID_HEIGHT);
+    
+    let board = playboard.grid
+        .iter()
+        .enumerate()
+        .map(|(i, x)| {
+            let mut color_grid = PLAYBOARD_GRID_COLOR1;
+            if i % 2 == 1 {
+                color_grid = PLAYBOARD_GRID_COLOR2;
+            }
+            cell::Cell::new(*x, PLAYBOARD_COLOR_TEXT, color_grid)
+        })
+        .collect::<Vec<_>>();
+
+    let mut data = matrix::Matrix::new(PLAYBOARD_ROW_COL_SIZE, board);
+    let display = MatrixDisplay::new(&format, &mut data);
+    display.print(&mut std::io::stdout(), &style::BordersStyle::None);
 }
 
 #[cfg(test)]
