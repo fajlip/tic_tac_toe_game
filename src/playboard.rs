@@ -18,11 +18,11 @@ pub enum PlayboardGridOptions {
 
 impl fmt::Display for PlayboardGridOptions {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-       match *self {
+        match *self {
             PlayboardGridOptions::X => write!(f, "X"),
             PlayboardGridOptions::O => write!(f, "O"),
             PlayboardGridOptions::Free => write!(f, " "),
-       }
+        }
     }
 }
 
@@ -39,8 +39,7 @@ pub struct Playboard {
     grid: [PlayboardGridOptions; PLAYBOARD_SIZE],
 }
 
-pub struct InvalidPlayboardSize<'a>
-{
+pub struct InvalidPlayboardSize<'a> {
     pub error: &'a str,
 }
 
@@ -52,12 +51,14 @@ impl<'a> fmt::Display for InvalidPlayboardSize<'a> {
 
 impl Playboard {
     pub fn new() -> Result<Self, InvalidPlayboardSize<'static>> {
-
         if PLAYBOARD_SIZE % 2 != 1 {
-            return Err(InvalidPlayboardSize {error: "Playboard size must be odd number."});
-        }
-        else if PLAYBOARD_ROW_COL_SIZE * PLAYBOARD_ROW_COL_SIZE != PLAYBOARD_SIZE {
-            return Err(InvalidPlayboardSize {error: "Playboard size does not correspond to playboard row and col size."});
+            return Err(InvalidPlayboardSize {
+                error: "Playboard size must be odd number.",
+            });
+        } else if PLAYBOARD_ROW_COL_SIZE * PLAYBOARD_ROW_COL_SIZE != PLAYBOARD_SIZE {
+            return Err(InvalidPlayboardSize {
+                error: "Playboard size does not correspond to playboard row and col size.",
+            });
         }
 
         // Initialize grid with free option.
@@ -79,14 +80,12 @@ impl Playboard {
 
     fn check_if_same_symbols(items: Vec<[PlayboardGridOptions; PLAYBOARD_ROW_COL_SIZE]>) -> bool {
         for item in &items {
-            let tmp = item
+            if item
                 .iter()
                 .zip(item.iter().skip(1))
                 .map(|(&x, &y)| x == y && x != PlayboardGridOptions::Free)
-                .collect::<Vec<bool>>();
-
-            // todo: misto collect
-            if tmp.iter().all(|&i| i) {
+                .all(|i| i)
+            {
                 return true;
             }
         }
@@ -144,7 +143,12 @@ impl Playboard {
     // TODO: Predelat
 
     fn get_row_items(&self) -> Vec<[PlayboardGridOptions; PLAYBOARD_ROW_COL_SIZE]> {
-        (*self.grid.array_chunks::<PLAYBOARD_ROW_COL_SIZE>().cloned().collect::<Vec<_>>()).to_vec()
+        (*self
+            .grid
+            .array_chunks::<PLAYBOARD_ROW_COL_SIZE>()
+            .cloned()
+            .collect::<Vec<_>>())
+        .to_vec()
     }
 
     fn get_col_items(&self) -> Vec<[PlayboardGridOptions; PLAYBOARD_ROW_COL_SIZE]> {
@@ -200,8 +204,9 @@ impl Playboard {
 
 pub fn display_board(playboard: MutexGuard<Playboard>) {
     let format = Format::new(PLAYBOARD_GRID_WIDTH, PLAYBOARD_GRID_HEIGHT);
-    
-    let board = playboard.grid
+
+    let board = playboard
+        .grid
         .iter()
         .enumerate()
         .map(|(i, x)| {
@@ -250,8 +255,6 @@ mod tests {
             ],
         }
     }
-
-
 
     #[test]
     fn test_i2d_into_1d() {
@@ -325,11 +328,20 @@ mod tests {
 
         // Invalid place options.
         // Row out of board:
-        assert_eq!(playboard.place_on_grid(4, 3, StartOrder::First), GameState::InvalidPlace);
+        assert_eq!(
+            playboard.place_on_grid(4, 3, StartOrder::First),
+            GameState::InvalidPlace
+        );
         // Col out of board:
-        assert_eq!(playboard.place_on_grid(3, 4, StartOrder::First), GameState::InvalidPlace);
+        assert_eq!(
+            playboard.place_on_grid(3, 4, StartOrder::First),
+            GameState::InvalidPlace
+        );
         // Field is not free:
-        assert_eq!(playboard.place_on_grid(1, 2, StartOrder::First), GameState::InvalidPlace);
+        assert_eq!(
+            playboard.place_on_grid(1, 2, StartOrder::First),
+            GameState::InvalidPlace
+        );
 
         // Playboard unchanged.
         assert_eq!(playboard, prepare_playboard());
@@ -340,10 +352,16 @@ mod tests {
         let mut playboard = prepare_playboard();
 
         // Placed but game running options:
-        assert_eq!(playboard.place_on_grid(1, 1, StartOrder::Second), GameState::Placed);
+        assert_eq!(
+            playboard.place_on_grid(1, 1, StartOrder::Second),
+            GameState::Placed
+        );
         assert_eq!(playboard.grid[0], PlayboardGridOptions::O);
 
-        assert_eq!(playboard.place_on_grid(3, 2, StartOrder::First), GameState::Placed);
+        assert_eq!(
+            playboard.place_on_grid(3, 2, StartOrder::First),
+            GameState::Placed
+        );
         assert_eq!(playboard.grid[7], PlayboardGridOptions::X);
     }
 
@@ -354,18 +372,27 @@ mod tests {
         playboard.grid[7] = PlayboardGridOptions::X;
 
         // Game not running anymore options:
-        assert_eq!(playboard.place_on_grid(2, 2, StartOrder::Second), GameState::Draw);
+        assert_eq!(
+            playboard.place_on_grid(2, 2, StartOrder::Second),
+            GameState::Draw
+        );
         assert_eq!(playboard.grid[4], PlayboardGridOptions::O);
 
         // Winning in row.
         playboard.grid[1] = PlayboardGridOptions::O;
         playboard.grid[2] = PlayboardGridOptions::Free;
-        assert_eq!(playboard.place_on_grid(1, 3, StartOrder::Second), GameState::GameOver);
+        assert_eq!(
+            playboard.place_on_grid(1, 3, StartOrder::Second),
+            GameState::GameOver
+        );
 
         // Winning in col.
         playboard.grid[1] = PlayboardGridOptions::X;
         playboard.grid[4] = PlayboardGridOptions::Free;
-        assert_eq!(playboard.place_on_grid(2, 2, StartOrder::First), GameState::GameOver);
+        assert_eq!(
+            playboard.place_on_grid(2, 2, StartOrder::First),
+            GameState::GameOver
+        );
     }
 
     #[test]

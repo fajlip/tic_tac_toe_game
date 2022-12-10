@@ -5,7 +5,7 @@ use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
 use crate::cli_args_processing::StartOrder;
-use crate::playboard::{GameState, Playboard, display_board};
+use crate::playboard::{display_board, GameState, Playboard};
 use crate::settings::commands::*;
 use colored::Colorize;
 
