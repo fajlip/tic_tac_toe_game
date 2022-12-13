@@ -79,6 +79,7 @@ impl Playboard {
     }
 
     fn check_if_same_symbols(items: Vec<[PlayboardGridOptions; PLAYBOARD_ROW_COL_SIZE]>) -> bool {
+        // todo: dalsi iterator a any
         for item in &items {
             if item
                 .iter()
@@ -109,6 +110,7 @@ impl Playboard {
         self.grid.iter().all(|&i| i != PlayboardGridOptions::Free)
     }
 
+    // todo: vracet result a zacinat od nuly
     pub fn place_on_grid(&mut self, row: usize, col: usize, start_order: StartOrder) -> GameState {
         // Players index from 1.
         assert!(row > 0);
