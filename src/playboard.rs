@@ -1,6 +1,7 @@
 use crate::matrix_display;
 use matrix_display::*;
 
+use std::iter::{Skip, StepBy, Take};
 use std::{fmt, sync::MutexGuard};
 
 use crate::cli_args_processing::StartOrder;
@@ -151,6 +152,55 @@ impl Playboard {
             .cloned()
             .collect::<Vec<_>>())
         .to_vec()
+    }
+
+    fn get_row_iter(&self, row: usize) -> Take<Skip<std::slice::Iter<'_, PlayboardGridOptions>>> {
+        assert!(row < PLAYBOARD_ROW_COL_SIZE);
+        self.grid
+            .iter()
+            .skip(row * PLAYBOARD_ROW_COL_SIZE)
+            .take(PLAYBOARD_ROW_COL_SIZE)
+    }
+
+    fn get_col_iter(&self, col: usize) -> StepBy<Skip<std::slice::Iter<'_, PlayboardGridOptions>>> {
+        assert!(col < PLAYBOARD_ROW_COL_SIZE);
+        self.grid.iter().skip(col).step_by(PLAYBOARD_ROW_COL_SIZE)
+    }
+
+    fn get_main_diag_iter(&self) -> impl Iterator<Item = &PlayboardGridOptions> {
+        let i1d_into_2d = |i: usize| -> (usize, usize) {
+            (
+                (i / PLAYBOARD_ROW_COL_SIZE) as usize,
+                i % PLAYBOARD_ROW_COL_SIZE,
+            )
+        };
+
+        self.grid
+            .iter()
+            .enumerate()
+            .filter(move |&(i, _)| {
+                let (row, col) = i1d_into_2d(i);
+                row == col
+            })
+            .map(|(_, e)| e)
+    }
+
+    fn get_anti_diag_iter(&self) -> impl Iterator<Item = &PlayboardGridOptions> {
+        let i1d_into_2d = |i: usize| -> (usize, usize) {
+            (
+                (i / PLAYBOARD_ROW_COL_SIZE) as usize,
+                i % PLAYBOARD_ROW_COL_SIZE,
+            )
+        };
+
+        self.grid
+            .iter()
+            .enumerate()
+            .filter(move |&(i, _)| {
+                let (row, col) = i1d_into_2d(i);
+                row + col == PLAYBOARD_ROW_COL_SIZE - 1
+            })
+            .map(|(_, e)| e)
     }
 
     fn get_col_items(&self) -> Vec<[PlayboardGridOptions; PLAYBOARD_ROW_COL_SIZE]> {
