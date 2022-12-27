@@ -35,7 +35,18 @@ pub enum GameState {
     GameOver,
 }
 
-#[derive(Debug, PartialEq)]
+fn i2d_into_1d(row: usize, col: usize) -> usize {
+    row * PLAYBOARD_ROW_COL_SIZE + col
+}
+
+fn i1d_into_2d(index: usize, cols: usize) -> (usize, usize) {
+    (
+        (index / cols) as usize,
+        index % cols,
+    )
+}
+
+#[derive(Debug, Clone, PartialEq)]
 pub struct Playboard {
     grid: [PlayboardGridOptions; PLAYBOARD_SIZE],
 }
@@ -69,14 +80,10 @@ impl Playboard {
         Ok(Self { grid })
     }
 
-    fn i2d_into_1d(row: usize, col: usize) -> usize {
-        row * PLAYBOARD_ROW_COL_SIZE + col
-    }
-
     fn check_validity_of_indexes(&self, row: usize, col: usize) -> bool {
         row < PLAYBOARD_ROW_COL_SIZE
             && col < PLAYBOARD_ROW_COL_SIZE
-            && self.grid[Self::i2d_into_1d(row, col)] == PlayboardGridOptions::Free
+            && self.grid[i2d_into_1d(row, col)] == PlayboardGridOptions::Free
     }
 
     // todo: vylepsit osetreni na none
@@ -120,7 +127,7 @@ impl Playboard {
             StartOrder::Second => PlayboardGridOptions::O,
         };
 
-        self.grid[Self::i2d_into_1d(row, col)] = player_playboard_grid_option;
+        self.grid[i2d_into_1d(row, col)] = player_playboard_grid_option;
 
         if self.check_for_game_win(row, col) {
             GameState::GameOver
@@ -149,36 +156,22 @@ impl Playboard {
     }
 
     fn get_main_diag_iter(&self) -> impl Iterator<Item = &PlayboardGridOptions> {
-        let i1d_into_2d = |i: usize| -> (usize, usize) {
-            (
-                (i / PLAYBOARD_ROW_COL_SIZE) as usize,
-                i % PLAYBOARD_ROW_COL_SIZE,
-            )
-        };
-
         self.grid
             .iter()
             .enumerate()
             .filter(move |&(i, _)| {
-                let (row, col) = i1d_into_2d(i);
+                let (row, col) = i1d_into_2d(i, PLAYBOARD_ROW_COL_SIZE);
                 row == col
             })
             .map(|(_, e)| e)
     }
 
     fn get_anti_diag_iter(&self) -> impl Iterator<Item = &PlayboardGridOptions> {
-        let i1d_into_2d = |i: usize| -> (usize, usize) {
-            (
-                (i / PLAYBOARD_ROW_COL_SIZE) as usize,
-                i % PLAYBOARD_ROW_COL_SIZE,
-            )
-        };
-
         self.grid
             .iter()
             .enumerate()
             .filter(move |&(i, _)| {
-                let (row, col) = i1d_into_2d(i);
+                let (row, col) = i1d_into_2d(i, PLAYBOARD_ROW_COL_SIZE);
                 row + col == PLAYBOARD_ROW_COL_SIZE - 1
             })
             .map(|(_, e)| e)
@@ -241,14 +234,27 @@ mod tests {
 
     #[test]
     fn test_i2d_into_1d() {
-        assert_eq!(Playboard::i2d_into_1d(0, 0), 0);
-        assert_eq!(Playboard::i2d_into_1d(0, 2), 2);
-        assert_eq!(Playboard::i2d_into_1d(1, 0), 3);
-        assert_eq!(Playboard::i2d_into_1d(1, 1), 4);
-        assert_eq!(Playboard::i2d_into_1d(1, 2), 5);
-        assert_eq!(Playboard::i2d_into_1d(2, 0), 6);
-        assert_eq!(Playboard::i2d_into_1d(2, 1), 7);
-        assert_eq!(Playboard::i2d_into_1d(2, 2), 8);
+        assert_eq!(i2d_into_1d(0, 0), 0);
+        assert_eq!(i2d_into_1d(0, 2), 2);
+        assert_eq!(i2d_into_1d(1, 0), 3);
+        assert_eq!(i2d_into_1d(1, 1), 4);
+        assert_eq!(i2d_into_1d(1, 2), 5);
+        assert_eq!(i2d_into_1d(2, 0), 6);
+        assert_eq!(i2d_into_1d(2, 1), 7);
+        assert_eq!(i2d_into_1d(2, 2), 8);
+    }
+
+    #[test]
+    fn test_i1d_into_2d() {
+        assert_eq!(i1d_into_2d(0, PLAYBOARD_ROW_COL_SIZE), (0, 0));
+        assert_eq!(i1d_into_2d(1, PLAYBOARD_ROW_COL_SIZE), (0, 1));
+        assert_eq!(i1d_into_2d(2, PLAYBOARD_ROW_COL_SIZE), (0, 2));
+        assert_eq!(i1d_into_2d(3, PLAYBOARD_ROW_COL_SIZE), (1, 0));
+        assert_eq!(i1d_into_2d(4, PLAYBOARD_ROW_COL_SIZE), (1, 1));
+        assert_eq!(i1d_into_2d(5, PLAYBOARD_ROW_COL_SIZE), (1, 2));
+        assert_eq!(i1d_into_2d(6, PLAYBOARD_ROW_COL_SIZE), (2, 0));
+        assert_eq!(i1d_into_2d(7, PLAYBOARD_ROW_COL_SIZE), (2, 1));
+        assert_eq!(i1d_into_2d(8, PLAYBOARD_ROW_COL_SIZE), (2, 2));
     }
 
     #[test]
@@ -270,39 +276,8 @@ mod tests {
     }
 
     #[test]
-    #[rustfmt::skip]
-    fn test_check_if_same_symbols() {
-        // Free option is not considered as same symbol:
-        assert!(!Playboard::check_if_same_symbols([PlayboardGridOptions::Free, PlayboardGridOptions::Free, PlayboardGridOptions::Free].iter()));
-        
-        assert!(Playboard::check_if_same_symbols([PlayboardGridOptions::X, PlayboardGridOptions::X, PlayboardGridOptions::X].iter()));
-        assert!(Playboard::check_if_same_symbols([PlayboardGridOptions::O, PlayboardGridOptions::O, PlayboardGridOptions::O].iter()));
-
-        assert!(!Playboard::check_if_same_symbols([PlayboardGridOptions::X, PlayboardGridOptions::O, PlayboardGridOptions::X].iter()));
-        assert!(!Playboard::check_if_same_symbols([PlayboardGridOptions::O, PlayboardGridOptions::O, PlayboardGridOptions::X].iter()));
-        assert!(!Playboard::check_if_same_symbols([PlayboardGridOptions::X, PlayboardGridOptions::X, PlayboardGridOptions::Free].iter()));
-        assert!(!Playboard::check_if_same_symbols([PlayboardGridOptions::O, PlayboardGridOptions::O, PlayboardGridOptions::Free].iter()));
-    }
-
-    #[test]
     fn test_check_for_game_win() {
         // todo
-    }
-
-    #[test]
-    fn test_check_for_full_playboard() {
-        let mut playboard = prepare_playboard();
-
-        assert!(!playboard.check_for_full_playboard());
-
-        playboard.grid[0] = PlayboardGridOptions::X;
-        assert!(!playboard.check_for_full_playboard());
-
-        playboard.grid[4] = PlayboardGridOptions::O;
-        assert!(!playboard.check_for_full_playboard());
-
-        playboard.grid[7] = PlayboardGridOptions::O;
-        assert!(playboard.check_for_full_playboard());
     }
 
     #[test]
@@ -467,5 +442,57 @@ mod tests {
         assert_eq!(result.next(), Some(&PlayboardGridOptions::X));
         assert_eq!(result.next(), Some(&PlayboardGridOptions::Free));
         assert_eq!(result.next(), Some(&PlayboardGridOptions::O));
+    }
+
+
+    // Quickcheck:
+    use quickcheck::{Arbitrary, Gen};
+
+    impl Arbitrary for PlayboardGridOptions {
+        fn arbitrary(g: &mut Gen) -> PlayboardGridOptions {
+            g.choose(&[PlayboardGridOptions::Free, PlayboardGridOptions::X, PlayboardGridOptions::O]).unwrap().clone()
+        }
+    }
+
+    impl Arbitrary for Playboard {
+        fn arbitrary(g: &mut quickcheck::Gen) -> Playboard {
+            let mut playboard = Playboard {grid: [PlayboardGridOptions::Free; PLAYBOARD_SIZE]};
+
+            for i in 0..PLAYBOARD_SIZE {
+                playboard.grid[i] = PlayboardGridOptions::arbitrary(g);
+            }
+
+            playboard
+        }
+    }
+    
+    fn check_if_same_symbols_naive(symbols: &[PlayboardGridOptions]) -> bool {
+        symbols[0] == symbols[1] && symbols[0] == symbols[2] && symbols[0] != PlayboardGridOptions::Free
+    }
+
+    fn check_for_full_playboard_naive(playboard: &Playboard) -> bool {
+        assert_eq!(PLAYBOARD_SIZE, 9);
+        playboard.grid[0] != PlayboardGridOptions::Free &&
+        playboard.grid[1] != PlayboardGridOptions::Free &&
+        playboard.grid[2] != PlayboardGridOptions::Free &&
+        playboard.grid[3] != PlayboardGridOptions::Free &&
+        playboard.grid[4] != PlayboardGridOptions::Free &&
+        playboard.grid[5] != PlayboardGridOptions::Free &&
+        playboard.grid[6] != PlayboardGridOptions::Free &&
+        playboard.grid[7] != PlayboardGridOptions::Free &&
+        playboard.grid[8] != PlayboardGridOptions::Free
+    }
+
+    quickcheck::quickcheck! {
+        fn test_check_if_same_symbols(playboard: Playboard) -> bool {
+            let symbols = &playboard.grid[0..PLAYBOARD_ROW_COL_SIZE];
+            assert_eq!(check_if_same_symbols_naive(symbols), Playboard::check_if_same_symbols(symbols.iter()));
+            true
+        }
+
+        fn test_check_for_full_playboard(playboard: Playboard) -> bool {
+            assert_eq!(check_for_full_playboard_naive(&playboard), playboard.check_for_full_playboard());
+            true
+        }
     }
 }

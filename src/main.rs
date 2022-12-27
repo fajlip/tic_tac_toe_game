@@ -2,6 +2,7 @@
 
 #[macro_use]
 extern crate clap;
+extern crate quickcheck;
 extern crate matrix_display;
 
 mod host_type_objects;
