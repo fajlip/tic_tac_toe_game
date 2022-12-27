@@ -79,31 +79,23 @@ impl Playboard {
             && self.grid[Self::i2d_into_1d(row, col)] == PlayboardGridOptions::Free
     }
 
-    fn check_if_same_symbols(items: Vec<[PlayboardGridOptions; PLAYBOARD_ROW_COL_SIZE]>) -> bool {
-        // todo: dalsi iterator a any
-        for item in &items {
-            if item
-                .iter()
-                .zip(item.iter().skip(1))
-                .map(|(&x, &y)| x == y && x != PlayboardGridOptions::Free)
-                .all(|i| i)
-            {
-                return true;
-            }
+    // todo: vylepsit osetreni na none
+    fn check_if_same_symbols<'a, T>(mut data_iter: T) -> bool
+    where
+    T: Iterator<Item = &'a PlayboardGridOptions>,
+    {
+        match data_iter.next() {
+            Some(first) => data_iter.all(|&x| x != PlayboardGridOptions::Free && x == *first),
+            None => false,
         }
-
-        false
     }
 
-    fn check_for_game_win(&self) -> bool {
-        let row_items = self.get_row_items();
-        let col_items = self.get_col_items();
-        let diagonal_items = self.get_diagonal_items();
-
+    fn check_for_game_win(&self, row: usize, col: usize) -> bool {
         // Check for win on rows, cols and diagonal.
-        Self::check_if_same_symbols(row_items)
-            || Self::check_if_same_symbols(col_items)
-            || Self::check_if_same_symbols(diagonal_items)
+        Self::check_if_same_symbols(self.get_row_iter(row))
+            || Self::check_if_same_symbols(self.get_col_iter(col))
+            || Self::check_if_same_symbols(self.get_main_diag_iter())
+            || Self::check_if_same_symbols(self.get_anti_diag_iter())
     }
 
     // k zamysleni: drzet pocet plnych poli
@@ -130,7 +122,7 @@ impl Playboard {
 
         self.grid[Self::i2d_into_1d(row, col)] = player_playboard_grid_option;
 
-        if self.check_for_game_win() {
+        if self.check_for_game_win(row, col) {
             GameState::GameOver
         } else if self.check_for_full_playboard() {
             GameState::Draw
@@ -141,17 +133,6 @@ impl Playboard {
 
     pub fn clear_board(&mut self) {
         self.grid = [PlayboardGridOptions::Free; PLAYBOARD_SIZE];
-    }
-
-    // TODO: Predelat
-
-    fn get_row_items(&self) -> Vec<[PlayboardGridOptions; PLAYBOARD_ROW_COL_SIZE]> {
-        (*self
-            .grid
-            .array_chunks::<PLAYBOARD_ROW_COL_SIZE>()
-            .cloned()
-            .collect::<Vec<_>>())
-        .to_vec()
     }
 
     fn get_row_iter(&self, row: usize) -> Take<Skip<std::slice::Iter<'_, PlayboardGridOptions>>> {
@@ -201,56 +182,6 @@ impl Playboard {
                 row + col == PLAYBOARD_ROW_COL_SIZE - 1
             })
             .map(|(_, e)| e)
-    }
-
-    fn get_col_items(&self) -> Vec<[PlayboardGridOptions; PLAYBOARD_ROW_COL_SIZE]> {
-        let mut grid_cols: Vec<[PlayboardGridOptions; PLAYBOARD_ROW_COL_SIZE]> = Vec::new();
-
-        for index_col in 0..PLAYBOARD_ROW_COL_SIZE {
-            let mut col_values = [PlayboardGridOptions::Free; PLAYBOARD_ROW_COL_SIZE];
-
-            for index_row in 0..PLAYBOARD_ROW_COL_SIZE {
-                col_values[index_row] = self.grid[Self::i2d_into_1d(index_row, index_col)];
-            }
-
-            grid_cols.push(col_values);
-        }
-
-        grid_cols
-    }
-
-    fn get_diagonal_items(&self) -> Vec<[PlayboardGridOptions; PLAYBOARD_ROW_COL_SIZE]> {
-        let mut grid_diagonal: Vec<[PlayboardGridOptions; PLAYBOARD_ROW_COL_SIZE]> = Vec::new();
-
-        let mut main_diagonal_values = [PlayboardGridOptions::Free; PLAYBOARD_ROW_COL_SIZE];
-        let mut main_diagnoal_array_index = 0;
-        for index_row in 0..PLAYBOARD_ROW_COL_SIZE {
-            for index_col in 0..PLAYBOARD_ROW_COL_SIZE {
-                if index_row == index_col {
-                    main_diagonal_values[main_diagnoal_array_index] =
-                        self.grid[Self::i2d_into_1d(index_row, index_col)];
-                    main_diagnoal_array_index += 1;
-                }
-            }
-        }
-
-        grid_diagonal.push(main_diagonal_values);
-
-        let mut anti_diagonal_values = [PlayboardGridOptions::Free; PLAYBOARD_ROW_COL_SIZE];
-        let mut anti_diagnoal_array_index = 0;
-        for index_row in 0..PLAYBOARD_ROW_COL_SIZE {
-            for index_col in 0..PLAYBOARD_ROW_COL_SIZE {
-                if index_row + index_col == PLAYBOARD_ROW_COL_SIZE - 1 {
-                    anti_diagonal_values[anti_diagnoal_array_index] =
-                        self.grid[Self::i2d_into_1d(index_row, index_col)];
-                    anti_diagnoal_array_index += 1;
-                }
-            }
-        }
-
-        grid_diagonal.push(anti_diagonal_values);
-
-        grid_diagonal
     }
 }
 
@@ -342,15 +273,15 @@ mod tests {
     #[rustfmt::skip]
     fn test_check_if_same_symbols() {
         // Free option is not considered as same symbol:
-        assert!(!Playboard::check_if_same_symbols(vec![[PlayboardGridOptions::Free, PlayboardGridOptions::Free, PlayboardGridOptions::Free]]));
+        assert!(!Playboard::check_if_same_symbols([PlayboardGridOptions::Free, PlayboardGridOptions::Free, PlayboardGridOptions::Free].iter()));
         
-        assert!(Playboard::check_if_same_symbols(vec![[PlayboardGridOptions::X, PlayboardGridOptions::X, PlayboardGridOptions::X]]));
-        assert!(Playboard::check_if_same_symbols(vec![[PlayboardGridOptions::O, PlayboardGridOptions::O, PlayboardGridOptions::O]]));
+        assert!(Playboard::check_if_same_symbols([PlayboardGridOptions::X, PlayboardGridOptions::X, PlayboardGridOptions::X].iter()));
+        assert!(Playboard::check_if_same_symbols([PlayboardGridOptions::O, PlayboardGridOptions::O, PlayboardGridOptions::O].iter()));
 
-        assert!(!Playboard::check_if_same_symbols(vec![[PlayboardGridOptions::X, PlayboardGridOptions::O, PlayboardGridOptions::X]]));
-        assert!(!Playboard::check_if_same_symbols(vec![[PlayboardGridOptions::O, PlayboardGridOptions::O, PlayboardGridOptions::X]]));
-        assert!(!Playboard::check_if_same_symbols(vec![[PlayboardGridOptions::X, PlayboardGridOptions::X, PlayboardGridOptions::Free]]));
-        assert!(!Playboard::check_if_same_symbols(vec![[PlayboardGridOptions::O, PlayboardGridOptions::O, PlayboardGridOptions::Free]]));
+        assert!(!Playboard::check_if_same_symbols([PlayboardGridOptions::X, PlayboardGridOptions::O, PlayboardGridOptions::X].iter()));
+        assert!(!Playboard::check_if_same_symbols([PlayboardGridOptions::O, PlayboardGridOptions::O, PlayboardGridOptions::X].iter()));
+        assert!(!Playboard::check_if_same_symbols([PlayboardGridOptions::X, PlayboardGridOptions::X, PlayboardGridOptions::Free].iter()));
+        assert!(!Playboard::check_if_same_symbols([PlayboardGridOptions::O, PlayboardGridOptions::O, PlayboardGridOptions::Free].iter()));
     }
 
     #[test]
@@ -536,53 +467,5 @@ mod tests {
         assert_eq!(result.next(), Some(&PlayboardGridOptions::X));
         assert_eq!(result.next(), Some(&PlayboardGridOptions::Free));
         assert_eq!(result.next(), Some(&PlayboardGridOptions::O));
-    }
-
-
-    #[test]
-    #[rustfmt::skip]
-    fn test_get_row_items() {
-        let expected_result = vec![
-            [PlayboardGridOptions::Free, PlayboardGridOptions::X,    PlayboardGridOptions::X],
-            [PlayboardGridOptions::X,    PlayboardGridOptions::Free, PlayboardGridOptions::O],
-            [PlayboardGridOptions::O,    PlayboardGridOptions::Free, PlayboardGridOptions::X],
-        ];
-        
-        let playboard = prepare_playboard();
-
-        let result = playboard.get_row_items();
-
-        assert_eq!(result, expected_result);
-    }
-
-    #[test]
-    #[rustfmt::skip]
-    fn test_get_col_items() {
-        let expected_result = vec![
-            [PlayboardGridOptions::Free, PlayboardGridOptions::X,    PlayboardGridOptions::O],
-            [PlayboardGridOptions::X,    PlayboardGridOptions::Free, PlayboardGridOptions::Free],
-            [PlayboardGridOptions::X,    PlayboardGridOptions::O,    PlayboardGridOptions::X],
-        ];
-        
-        let playboard = prepare_playboard();
-
-        let result = playboard.get_col_items();
-
-        assert_eq!(result, expected_result);
-    }
-
-    #[test]
-    #[rustfmt::skip]
-    fn test_get_diagonal_items() {
-        let expected_result = vec![
-            [PlayboardGridOptions::Free, PlayboardGridOptions::Free, PlayboardGridOptions::X],
-            [PlayboardGridOptions::X,    PlayboardGridOptions::Free, PlayboardGridOptions::O],
-        ];
-        
-        let playboard = prepare_playboard();
-
-        let result = playboard.get_diagonal_items();
-
-        assert_eq!(result, expected_result);
     }
 }
