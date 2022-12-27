@@ -38,8 +38,9 @@ fn decode_place(data: String) -> Option<(usize, usize)> {
     };
 
     Some((
-        res["row"].to_string().parse::<usize>().unwrap(),
-        res["col"].to_string().parse::<usize>().unwrap(),
+        // index starts from zero
+        res["row"].to_string().parse::<usize>().unwrap() - 1,
+        res["col"].to_string().parse::<usize>().unwrap() - 1,
     ))
 }
 

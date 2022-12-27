@@ -110,14 +110,8 @@ impl Playboard {
         self.grid.iter().all(|&i| i != PlayboardGridOptions::Free)
     }
 
-    // todo: vracet result a zacinat od nuly
+    // todo: vracet result
     pub fn place_on_grid(&mut self, row: usize, col: usize, start_order: StartOrder) -> GameState {
-        // Players index from 1.
-        assert!(row > 0);
-        assert!(col > 0);
-        let row: usize = row - 1;
-        let col: usize = col - 1;
-
         if !self.check_validity_of_indexes(row, col) {
             return GameState::InvalidPlace;
         }
@@ -287,17 +281,17 @@ mod tests {
         // Invalid place options.
         // Row out of board:
         assert_eq!(
-            playboard.place_on_grid(4, 3, StartOrder::First),
+            playboard.place_on_grid(3, 2, StartOrder::First),
             GameState::InvalidPlace
         );
         // Col out of board:
         assert_eq!(
-            playboard.place_on_grid(3, 4, StartOrder::First),
+            playboard.place_on_grid(2, 3, StartOrder::First),
             GameState::InvalidPlace
         );
         // Field is not free:
         assert_eq!(
-            playboard.place_on_grid(1, 2, StartOrder::First),
+            playboard.place_on_grid(0, 1, StartOrder::First),
             GameState::InvalidPlace
         );
 
@@ -311,13 +305,13 @@ mod tests {
 
         // Placed but game running options:
         assert_eq!(
-            playboard.place_on_grid(1, 1, StartOrder::Second),
+            playboard.place_on_grid(0, 0, StartOrder::Second),
             GameState::Placed
         );
         assert_eq!(playboard.grid[0], PlayboardGridOptions::O);
 
         assert_eq!(
-            playboard.place_on_grid(3, 2, StartOrder::First),
+            playboard.place_on_grid(2, 1, StartOrder::First),
             GameState::Placed
         );
         assert_eq!(playboard.grid[7], PlayboardGridOptions::X);
@@ -331,7 +325,7 @@ mod tests {
 
         // Game not running anymore options:
         assert_eq!(
-            playboard.place_on_grid(2, 2, StartOrder::Second),
+            playboard.place_on_grid(1, 1, StartOrder::Second),
             GameState::Draw
         );
         assert_eq!(playboard.grid[4], PlayboardGridOptions::O);
@@ -340,7 +334,7 @@ mod tests {
         playboard.grid[1] = PlayboardGridOptions::O;
         playboard.grid[2] = PlayboardGridOptions::Free;
         assert_eq!(
-            playboard.place_on_grid(1, 3, StartOrder::Second),
+            playboard.place_on_grid(0, 2, StartOrder::Second),
             GameState::GameOver
         );
 
@@ -348,7 +342,7 @@ mod tests {
         playboard.grid[1] = PlayboardGridOptions::X;
         playboard.grid[4] = PlayboardGridOptions::Free;
         assert_eq!(
-            playboard.place_on_grid(2, 2, StartOrder::First),
+            playboard.place_on_grid(1, 1, StartOrder::First),
             GameState::GameOver
         );
     }
