@@ -7,7 +7,7 @@ use std::{fmt, sync::MutexGuard};
 use crate::cli_args_processing::StartOrder;
 use crate::settings::playboard_options::{
     PLAYBOARD_COLOR_TEXT, PLAYBOARD_GRID_COLOR1, PLAYBOARD_GRID_COLOR2, PLAYBOARD_GRID_HEIGHT,
-    PLAYBOARD_GRID_WIDTH, PLAYBOARD_ROW_COL_SIZE, PLAYBOARD_SIZE,
+    PLAYBOARD_GRID_WIDTH,
 };
 
 #[derive(Copy, Clone, Eq, PartialEq, Debug)]
@@ -35,20 +35,22 @@ pub enum GameState {
     GameOver,
 }
 
-fn i2d_into_1d(row: usize, col: usize) -> usize {
-    row * PLAYBOARD_ROW_COL_SIZE + col
+fn i2d_into_1d(row: usize, col: usize, number_of_cols: usize) -> usize {
+    row * number_of_cols + col
 }
 
-fn i1d_into_2d(index: usize, cols: usize) -> (usize, usize) {
+fn i1d_into_2d(index: usize, number_of_cols: usize) -> (usize, usize) {
     (
-        (index / cols) as usize,
-        index % cols,
+        (index / number_of_cols) as usize,
+        index % number_of_cols,
     )
 }
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Playboard {
-    grid: [PlayboardGridOptions; PLAYBOARD_SIZE],
+    grid: Vec<PlayboardGridOptions>,
+    row_col_size: usize,
+    size: usize,
 }
 
 pub struct InvalidPlayboardSize<'a> {
@@ -62,28 +64,25 @@ impl<'a> fmt::Display for InvalidPlayboardSize<'a> {
 }
 
 impl Playboard {
-    pub fn new() -> Result<Self, InvalidPlayboardSize<'static>> {
-        if PLAYBOARD_SIZE % 2 != 1 {
+    pub fn new<const ROW_COL_SIZE: usize>() -> Result<Self, InvalidPlayboardSize<'static>> {
+        let size: usize = ROW_COL_SIZE * ROW_COL_SIZE;
+
+        if size % 2 != 1 {
             return Err(InvalidPlayboardSize {
                 error: "Playboard size must be odd number.",
-            });
-        } else if PLAYBOARD_ROW_COL_SIZE * PLAYBOARD_ROW_COL_SIZE != PLAYBOARD_SIZE {
-            return Err(InvalidPlayboardSize {
-                error: "Playboard size does not correspond to playboard row and col size.",
             });
         }
 
         // Initialize grid with free option.
-        let grid: [PlayboardGridOptions; PLAYBOARD_SIZE] =
-            [PlayboardGridOptions::Free; PLAYBOARD_SIZE];
+        let grid: Vec<PlayboardGridOptions> = vec![PlayboardGridOptions::Free; size];
 
-        Ok(Self { grid })
+        Ok(Self { grid, row_col_size: ROW_COL_SIZE, size })
     }
 
     fn check_validity_of_indexes(&self, row: usize, col: usize) -> bool {
-        row < PLAYBOARD_ROW_COL_SIZE
-            && col < PLAYBOARD_ROW_COL_SIZE
-            && self.grid[i2d_into_1d(row, col)] == PlayboardGridOptions::Free
+        row < self.row_col_size
+            && col < self.row_col_size
+            && self.grid[i2d_into_1d(row, col, self.row_col_size)] == PlayboardGridOptions::Free
     }
 
     // todo: vylepsit osetreni na none
@@ -121,7 +120,7 @@ impl Playboard {
             StartOrder::Second => PlayboardGridOptions::O,
         };
 
-        self.grid[i2d_into_1d(row, col)] = player_playboard_grid_option;
+        self.grid[i2d_into_1d(row, col, self.row_col_size)] = player_playboard_grid_option;
 
         if self.check_for_game_win(row, col) {
             GameState::GameOver
@@ -133,20 +132,20 @@ impl Playboard {
     }
 
     pub fn clear_board(&mut self) {
-        self.grid = [PlayboardGridOptions::Free; PLAYBOARD_SIZE];
+        self.grid = vec![PlayboardGridOptions::Free; self.size];
     }
 
     fn get_row_iter(&self, row: usize) -> Take<Skip<std::slice::Iter<'_, PlayboardGridOptions>>> {
-        assert!(row < PLAYBOARD_ROW_COL_SIZE);
+        assert!(row < self.row_col_size);
         self.grid
             .iter()
-            .skip(row * PLAYBOARD_ROW_COL_SIZE)
-            .take(PLAYBOARD_ROW_COL_SIZE)
+            .skip(row * self.row_col_size)
+            .take(self.row_col_size)
     }
 
     fn get_col_iter(&self, col: usize) -> StepBy<Skip<std::slice::Iter<'_, PlayboardGridOptions>>> {
-        assert!(col < PLAYBOARD_ROW_COL_SIZE);
-        self.grid.iter().skip(col).step_by(PLAYBOARD_ROW_COL_SIZE)
+        assert!(col < self.row_col_size);
+        self.grid.iter().skip(col).step_by(self.row_col_size)
     }
 
     fn get_main_diag_iter(&self) -> impl Iterator<Item = &PlayboardGridOptions> {
@@ -154,7 +153,7 @@ impl Playboard {
             .iter()
             .enumerate()
             .filter(move |&(i, _)| {
-                let (row, col) = i1d_into_2d(i, PLAYBOARD_ROW_COL_SIZE);
+                let (row, col) = i1d_into_2d(i, self.row_col_size);
                 row == col
             })
             .map(|(_, e)| e)
@@ -165,14 +164,14 @@ impl Playboard {
             .iter()
             .enumerate()
             .filter(move |&(i, _)| {
-                let (row, col) = i1d_into_2d(i, PLAYBOARD_ROW_COL_SIZE);
-                row + col == PLAYBOARD_ROW_COL_SIZE - 1
+                let (row, col) = i1d_into_2d(i, self.row_col_size);
+                row + col == self.row_col_size - 1
             })
             .map(|(_, e)| e)
     }
 }
 
-pub fn display_board(playboard: MutexGuard<Playboard>) {
+pub fn display_board(playboard: MutexGuard<Playboard>, row_col_size: usize) {
     let format = Format::new(PLAYBOARD_GRID_WIDTH, PLAYBOARD_GRID_HEIGHT);
 
     let board = playboard
@@ -188,7 +187,7 @@ pub fn display_board(playboard: MutexGuard<Playboard>) {
         })
         .collect::<Vec<_>>();
 
-    let mut data = matrix::Matrix::new(PLAYBOARD_ROW_COL_SIZE, board);
+    let mut data = matrix::Matrix::new(row_col_size, board);
     let display = MatrixDisplay::new(&format, &mut data);
     display.print(&mut std::io::stdout(), &style::BordersStyle::None);
 }
@@ -198,11 +197,14 @@ mod tests {
     use crate::playboard;
     use playboard::*;
 
+    const TESTED_PLAYBOARD_ROW_COL_SIZE: usize = 3;
+    const TESTED_PLAYBOARD_SIZE: usize = 9;
+
     #[test]
     fn test_new() {
-        let expected_result = [PlayboardGridOptions::Free; PLAYBOARD_SIZE];
+        let expected_result = [PlayboardGridOptions::Free; TESTED_PLAYBOARD_SIZE];
 
-        let result = match Playboard::new() {
+        let result = match Playboard::new::<TESTED_PLAYBOARD_ROW_COL_SIZE>() {
             Ok(playboard) => playboard,
             Err(_) => {
                 assert!(false);
@@ -211,44 +213,46 @@ mod tests {
         };
 
         assert_eq!(result.grid, expected_result);
-        assert_eq!(result.grid.len(), PLAYBOARD_SIZE);
+        assert_eq!(result.grid.len(), TESTED_PLAYBOARD_SIZE);
     }
 
     #[rustfmt::skip]
     fn prepare_playboard() -> Playboard {
         Playboard {
             grid:
-            [
+            vec![
                 PlayboardGridOptions::Free, PlayboardGridOptions::X,    PlayboardGridOptions::X,
                 PlayboardGridOptions::X,    PlayboardGridOptions::Free, PlayboardGridOptions::O,
                 PlayboardGridOptions::O,    PlayboardGridOptions::Free, PlayboardGridOptions::X,
             ],
+            row_col_size: TESTED_PLAYBOARD_ROW_COL_SIZE,
+            size: TESTED_PLAYBOARD_SIZE
         }
     }
 
     #[test]
     fn test_i2d_into_1d() {
-        assert_eq!(i2d_into_1d(0, 0), 0);
-        assert_eq!(i2d_into_1d(0, 2), 2);
-        assert_eq!(i2d_into_1d(1, 0), 3);
-        assert_eq!(i2d_into_1d(1, 1), 4);
-        assert_eq!(i2d_into_1d(1, 2), 5);
-        assert_eq!(i2d_into_1d(2, 0), 6);
-        assert_eq!(i2d_into_1d(2, 1), 7);
-        assert_eq!(i2d_into_1d(2, 2), 8);
+        assert_eq!(i2d_into_1d(0, 0, TESTED_PLAYBOARD_ROW_COL_SIZE), 0);
+        assert_eq!(i2d_into_1d(0, 2, TESTED_PLAYBOARD_ROW_COL_SIZE), 2);
+        assert_eq!(i2d_into_1d(1, 0, TESTED_PLAYBOARD_ROW_COL_SIZE), 3);
+        assert_eq!(i2d_into_1d(1, 1, TESTED_PLAYBOARD_ROW_COL_SIZE), 4);
+        assert_eq!(i2d_into_1d(1, 2, TESTED_PLAYBOARD_ROW_COL_SIZE), 5);
+        assert_eq!(i2d_into_1d(2, 0, TESTED_PLAYBOARD_ROW_COL_SIZE), 6);
+        assert_eq!(i2d_into_1d(2, 1, TESTED_PLAYBOARD_ROW_COL_SIZE), 7);
+        assert_eq!(i2d_into_1d(2, 2, TESTED_PLAYBOARD_ROW_COL_SIZE), 8);
     }
 
     #[test]
     fn test_i1d_into_2d() {
-        assert_eq!(i1d_into_2d(0, PLAYBOARD_ROW_COL_SIZE), (0, 0));
-        assert_eq!(i1d_into_2d(1, PLAYBOARD_ROW_COL_SIZE), (0, 1));
-        assert_eq!(i1d_into_2d(2, PLAYBOARD_ROW_COL_SIZE), (0, 2));
-        assert_eq!(i1d_into_2d(3, PLAYBOARD_ROW_COL_SIZE), (1, 0));
-        assert_eq!(i1d_into_2d(4, PLAYBOARD_ROW_COL_SIZE), (1, 1));
-        assert_eq!(i1d_into_2d(5, PLAYBOARD_ROW_COL_SIZE), (1, 2));
-        assert_eq!(i1d_into_2d(6, PLAYBOARD_ROW_COL_SIZE), (2, 0));
-        assert_eq!(i1d_into_2d(7, PLAYBOARD_ROW_COL_SIZE), (2, 1));
-        assert_eq!(i1d_into_2d(8, PLAYBOARD_ROW_COL_SIZE), (2, 2));
+        assert_eq!(i1d_into_2d(0, TESTED_PLAYBOARD_ROW_COL_SIZE), (0, 0));
+        assert_eq!(i1d_into_2d(1, TESTED_PLAYBOARD_ROW_COL_SIZE), (0, 1));
+        assert_eq!(i1d_into_2d(2, TESTED_PLAYBOARD_ROW_COL_SIZE), (0, 2));
+        assert_eq!(i1d_into_2d(3, TESTED_PLAYBOARD_ROW_COL_SIZE), (1, 0));
+        assert_eq!(i1d_into_2d(4, TESTED_PLAYBOARD_ROW_COL_SIZE), (1, 1));
+        assert_eq!(i1d_into_2d(5, TESTED_PLAYBOARD_ROW_COL_SIZE), (1, 2));
+        assert_eq!(i1d_into_2d(6, TESTED_PLAYBOARD_ROW_COL_SIZE), (2, 0));
+        assert_eq!(i1d_into_2d(7, TESTED_PLAYBOARD_ROW_COL_SIZE), (2, 1));
+        assert_eq!(i1d_into_2d(8, TESTED_PLAYBOARD_ROW_COL_SIZE), (2, 2));
     }
 
     #[test]
@@ -351,7 +355,7 @@ mod tests {
     fn test_clear_board() {
         let mut playboard = prepare_playboard();
 
-        let expected_result = [PlayboardGridOptions::Free; PLAYBOARD_SIZE];
+        let expected_result = [PlayboardGridOptions::Free; TESTED_PLAYBOARD_SIZE];
 
         playboard.clear_board();
 
@@ -450,9 +454,14 @@ mod tests {
 
     impl Arbitrary for Playboard {
         fn arbitrary(g: &mut quickcheck::Gen) -> Playboard {
-            let mut playboard = Playboard {grid: [PlayboardGridOptions::Free; PLAYBOARD_SIZE]};
+            let mut playboard = Playboard
+            {
+                grid: vec![PlayboardGridOptions::Free; TESTED_PLAYBOARD_SIZE],
+                row_col_size: TESTED_PLAYBOARD_ROW_COL_SIZE,
+                size: TESTED_PLAYBOARD_SIZE
+            };
 
-            for i in 0..PLAYBOARD_SIZE {
+            for i in 0..TESTED_PLAYBOARD_SIZE {
                 playboard.grid[i] = PlayboardGridOptions::arbitrary(g);
             }
 
@@ -465,7 +474,6 @@ mod tests {
     }
 
     fn check_for_full_playboard_naive(playboard: &Playboard) -> bool {
-        assert_eq!(PLAYBOARD_SIZE, 9);
         playboard.grid[0] != PlayboardGridOptions::Free &&
         playboard.grid[1] != PlayboardGridOptions::Free &&
         playboard.grid[2] != PlayboardGridOptions::Free &&
@@ -479,7 +487,7 @@ mod tests {
 
     quickcheck::quickcheck! {
         fn test_check_if_same_symbols(playboard: Playboard) -> bool {
-            let symbols = &playboard.grid[0..PLAYBOARD_ROW_COL_SIZE];
+            let symbols = &playboard.grid[0..TESTED_PLAYBOARD_ROW_COL_SIZE];
             assert_eq!(check_if_same_symbols_naive(symbols), Playboard::check_if_same_symbols(symbols.iter()));
             true
         }

@@ -13,6 +13,7 @@ use crate::host_type_objects_handlers::{
 use crate::host_type_objects_utility::{get_first_free_port, print_server_game_setup};
 use crate::playboard::Playboard;
 use crate::settings::commands::{AGREE_COMMAND, PLACE_ON_PLAYBOARD_COMMAND, PLAY_AGAIN_COMMAND};
+use crate::settings::playboard_options::PLAYBOARD_ROW_COL_SIZE;
 use colored::Colorize;
 
 fn run_func_in_thread(
@@ -38,7 +39,7 @@ fn run_func_in_thread(
     Arc<AtomicBool>,
     Arc<AtomicBool>,
 ) {
-    let playboard: Playboard = match Playboard::new() {
+    let playboard: Playboard = match Playboard::new::<PLAYBOARD_ROW_COL_SIZE>() {
         Ok(playboard) => playboard,
         Err(e) => {
             println!("{}", e);

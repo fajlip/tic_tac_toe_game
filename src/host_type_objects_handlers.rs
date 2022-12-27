@@ -7,6 +7,7 @@ use std::time::Duration;
 use crate::cli_args_processing::StartOrder;
 use crate::playboard::{display_board, GameState, Playboard};
 use crate::settings::commands::*;
+use crate::settings::playboard_options::PLAYBOARD_ROW_COL_SIZE;
 use colored::Colorize;
 
 fn read_stream_data(arc_stream: &Arc<Mutex<TcpStream>>) -> (String, usize) {
@@ -94,7 +95,7 @@ pub fn place_on_board(
                 }
             }
 
-            display_board(guard_playboard);
+            display_board(guard_playboard, PLAYBOARD_ROW_COL_SIZE);
         }
         None => {
             let msg = format!(

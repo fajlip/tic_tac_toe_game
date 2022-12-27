@@ -1,4 +1,3 @@
-pub const PLAYBOARD_SIZE: usize = 9;
 pub const PLAYBOARD_ROW_COL_SIZE: usize = 3;
 
 // simulate square
