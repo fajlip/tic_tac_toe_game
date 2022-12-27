@@ -459,6 +459,87 @@ mod tests {
     }
 
     #[test]
+    fn test_get_row_iter() {
+        let playboard = prepare_playboard();
+
+        {
+            let mut result = playboard.get_row_iter(0);
+
+            assert_eq!(result.next(), Some(&PlayboardGridOptions::Free));
+            assert_eq!(result.next(), Some(&PlayboardGridOptions::X));
+            assert_eq!(result.next(), Some(&PlayboardGridOptions::X));
+        }
+
+        {
+            let mut result = playboard.get_row_iter(1);
+
+            assert_eq!(result.next(), Some(&PlayboardGridOptions::X));
+            assert_eq!(result.next(), Some(&PlayboardGridOptions::Free));
+            assert_eq!(result.next(), Some(&PlayboardGridOptions::O));
+        }
+
+        {
+            let mut result = playboard.get_row_iter(2);
+
+            assert_eq!(result.next(), Some(&PlayboardGridOptions::O));
+            assert_eq!(result.next(), Some(&PlayboardGridOptions::Free));
+            assert_eq!(result.next(), Some(&PlayboardGridOptions::X));
+        }
+    }
+
+    #[test]
+    fn test_get_col_iter() {
+        let playboard = prepare_playboard();
+
+        {
+            let mut result = playboard.get_col_iter(0);
+
+            assert_eq!(result.next(), Some(&PlayboardGridOptions::Free));
+            assert_eq!(result.next(), Some(&PlayboardGridOptions::X));
+            assert_eq!(result.next(), Some(&PlayboardGridOptions::O));
+        }
+
+        {
+            let mut result = playboard.get_col_iter(1);
+
+            assert_eq!(result.next(), Some(&PlayboardGridOptions::X));
+            assert_eq!(result.next(), Some(&PlayboardGridOptions::Free));
+            assert_eq!(result.next(), Some(&PlayboardGridOptions::Free));
+        }
+
+        {
+            let mut result = playboard.get_col_iter(2);
+
+            assert_eq!(result.next(), Some(&PlayboardGridOptions::X));
+            assert_eq!(result.next(), Some(&PlayboardGridOptions::O));
+            assert_eq!(result.next(), Some(&PlayboardGridOptions::X));
+        }
+    }
+    
+    #[test]
+    fn test_get_main_diag_iter() {
+        let playboard = prepare_playboard();
+
+        let mut result = playboard.get_main_diag_iter();
+
+        assert_eq!(result.next(), Some(&PlayboardGridOptions::Free));
+        assert_eq!(result.next(), Some(&PlayboardGridOptions::Free));
+        assert_eq!(result.next(), Some(&PlayboardGridOptions::X));
+    }
+
+    #[test]
+    fn test_get_anti_diag_iter() {
+        let playboard = prepare_playboard();
+
+        let mut result = playboard.get_anti_diag_iter();
+
+        assert_eq!(result.next(), Some(&PlayboardGridOptions::X));
+        assert_eq!(result.next(), Some(&PlayboardGridOptions::Free));
+        assert_eq!(result.next(), Some(&PlayboardGridOptions::O));
+    }
+
+
+    #[test]
     #[rustfmt::skip]
     fn test_get_row_items() {
         let expected_result = vec![
