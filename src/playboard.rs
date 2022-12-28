@@ -362,93 +362,12 @@ mod tests {
         assert_eq!(playboard.grid, expected_result);
     }
 
-    #[test]
-    fn test_get_row_iter() {
-        let playboard = prepare_playboard();
-
-        {
-            let mut result = playboard.get_row_iter(0);
-
-            assert_eq!(result.next(), Some(&PlayboardGridOptions::Free));
-            assert_eq!(result.next(), Some(&PlayboardGridOptions::X));
-            assert_eq!(result.next(), Some(&PlayboardGridOptions::X));
-        }
-
-        {
-            let mut result = playboard.get_row_iter(1);
-
-            assert_eq!(result.next(), Some(&PlayboardGridOptions::X));
-            assert_eq!(result.next(), Some(&PlayboardGridOptions::Free));
-            assert_eq!(result.next(), Some(&PlayboardGridOptions::O));
-        }
-
-        {
-            let mut result = playboard.get_row_iter(2);
-
-            assert_eq!(result.next(), Some(&PlayboardGridOptions::O));
-            assert_eq!(result.next(), Some(&PlayboardGridOptions::Free));
-            assert_eq!(result.next(), Some(&PlayboardGridOptions::X));
-        }
-    }
-
-    #[test]
-    fn test_get_col_iter() {
-        let playboard = prepare_playboard();
-
-        {
-            let mut result = playboard.get_col_iter(0);
-
-            assert_eq!(result.next(), Some(&PlayboardGridOptions::Free));
-            assert_eq!(result.next(), Some(&PlayboardGridOptions::X));
-            assert_eq!(result.next(), Some(&PlayboardGridOptions::O));
-        }
-
-        {
-            let mut result = playboard.get_col_iter(1);
-
-            assert_eq!(result.next(), Some(&PlayboardGridOptions::X));
-            assert_eq!(result.next(), Some(&PlayboardGridOptions::Free));
-            assert_eq!(result.next(), Some(&PlayboardGridOptions::Free));
-        }
-
-        {
-            let mut result = playboard.get_col_iter(2);
-
-            assert_eq!(result.next(), Some(&PlayboardGridOptions::X));
-            assert_eq!(result.next(), Some(&PlayboardGridOptions::O));
-            assert_eq!(result.next(), Some(&PlayboardGridOptions::X));
-        }
-    }
-    
-    #[test]
-    fn test_get_main_diag_iter() {
-        let playboard = prepare_playboard();
-
-        let mut result = playboard.get_main_diag_iter();
-
-        assert_eq!(result.next(), Some(&PlayboardGridOptions::Free));
-        assert_eq!(result.next(), Some(&PlayboardGridOptions::Free));
-        assert_eq!(result.next(), Some(&PlayboardGridOptions::X));
-    }
-
-    #[test]
-    fn test_get_anti_diag_iter() {
-        let playboard = prepare_playboard();
-
-        let mut result = playboard.get_anti_diag_iter();
-
-        assert_eq!(result.next(), Some(&PlayboardGridOptions::X));
-        assert_eq!(result.next(), Some(&PlayboardGridOptions::Free));
-        assert_eq!(result.next(), Some(&PlayboardGridOptions::O));
-    }
-
-
     // Quickcheck:
     use quickcheck::{Arbitrary, Gen};
 
     impl Arbitrary for PlayboardGridOptions {
         fn arbitrary(g: &mut Gen) -> PlayboardGridOptions {
-            g.choose(&[PlayboardGridOptions::Free, PlayboardGridOptions::X, PlayboardGridOptions::O]).unwrap().clone()
+            g.choose(&[PlayboardGridOptions::Free, PlayboardGridOptions::X, PlayboardGridOptions::O]).unwrap().to_owned()
         }
     }
 
@@ -485,6 +404,19 @@ mod tests {
         playboard.grid[8] != PlayboardGridOptions::Free
     }
 
+    #[derive(Debug, Clone)]
+    enum ValidIndex {
+        Zero = 0,
+        One,
+        Two
+    }
+
+    impl Arbitrary for ValidIndex {
+        fn arbitrary(g: &mut quickcheck::Gen) -> Self {
+            g.choose(&[ValidIndex::Zero, ValidIndex::One, ValidIndex::Two]).unwrap().to_owned()
+        }
+    }
+
     quickcheck::quickcheck! {
         fn test_check_if_same_symbols(playboard: Playboard) -> bool {
             let symbols = &playboard.grid[0..TESTED_PLAYBOARD_ROW_COL_SIZE];
@@ -494,6 +426,45 @@ mod tests {
 
         fn test_check_for_full_playboard(playboard: Playboard) -> bool {
             assert_eq!(check_for_full_playboard_naive(&playboard), playboard.check_for_full_playboard());
+            true
+        }
+
+        fn test_get_row_iter(playboard: Playboard, row: ValidIndex) -> bool {
+            let row_num = row as usize;
+
+            let mut row_iter = playboard.get_row_iter(row_num);
+            assert_eq!(Some(&playboard.grid[row_num * TESTED_PLAYBOARD_ROW_COL_SIZE]), row_iter.next());
+            assert_eq!(Some(&playboard.grid[row_num * TESTED_PLAYBOARD_ROW_COL_SIZE + 1]), row_iter.next());
+            assert_eq!(Some(&playboard.grid[row_num * TESTED_PLAYBOARD_ROW_COL_SIZE + 2]), row_iter.next());
+            true
+        }
+
+        fn test_get_col_iter(playboard: Playboard, col: ValidIndex) -> bool {
+            let col_num = col as usize;
+
+            let mut col_iter = playboard.get_col_iter(col_num);
+            assert_eq!(Some(&playboard.grid[0 + col_num]), col_iter.next());
+            assert_eq!(Some(&playboard.grid[3 + col_num]), col_iter.next());
+            assert_eq!(Some(&playboard.grid[6 + col_num]), col_iter.next());
+            true
+        }
+
+
+        fn test_get_main_diag_iter(playboard: Playboard) -> bool {
+            let mut main_diag_iter = playboard.get_main_diag_iter();
+
+            assert_eq!(Some(&playboard.grid[0]), main_diag_iter.next());
+            assert_eq!(Some(&playboard.grid[4]), main_diag_iter.next());
+            assert_eq!(Some(&playboard.grid[8]), main_diag_iter.next());
+            true
+        }
+
+        fn test_get_anti_diag_iter(playboard: Playboard) -> bool {
+            let mut anti_diag_iter = playboard.get_anti_diag_iter();
+
+            assert_eq!(Some(&playboard.grid[2]), anti_diag_iter.next());
+            assert_eq!(Some(&playboard.grid[4]), anti_diag_iter.next());
+            assert_eq!(Some(&playboard.grid[6]), anti_diag_iter.next());
             true
         }
     }
