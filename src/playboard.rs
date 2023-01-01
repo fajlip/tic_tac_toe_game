@@ -10,6 +10,7 @@ use crate::settings::playboard_options::{
     PLAYBOARD_GRID_WIDTH,
 };
 
+/// Valid options for playboard grid. Representing empty or taken fields by both players.  
 #[derive(Copy, Clone, Eq, PartialEq, Debug)]
 pub enum PlayboardGridOptions {
     X,
@@ -35,10 +36,25 @@ pub enum GameState {
     GameOver,
 }
 
+/// Converts 2D playboard position representation into 1D.
+///
+/// # Arguments
+///
+/// * `row` - Row in 2D playboard position.
+/// * `col` - Column in 2D playboard position.
+/// * `number_of_cols` - Number of columns which playboard uses.
+///
 fn i2d_into_1d(row: usize, col: usize, number_of_cols: usize) -> usize {
     row * number_of_cols + col
 }
 
+/// Converts 1D playboard position representation into 2D.
+///
+/// # Arguments
+///
+/// * `index` - Index into 1D playboard position.
+/// * `number_of_cols` - Number of columns which playboard uses.
+///
 fn i1d_into_2d(index: usize, number_of_cols: usize) -> (usize, usize) {
     (
         (index / number_of_cols) as usize,
@@ -53,10 +69,13 @@ pub struct Playboard {
     size: usize,
 }
 
+
 pub struct InvalidPlayboardSize<'a> {
+    /// String that is containing error message.
     pub error: &'a str,
 }
 
+/// Writes out `InvalidPlayboardSize` [error](InvalidPlayboardSize::error) on whom it is called on.
 impl<'a> fmt::Display for InvalidPlayboardSize<'a> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "{}", self.error)
@@ -64,6 +83,22 @@ impl<'a> fmt::Display for InvalidPlayboardSize<'a> {
 }
 
 impl Playboard {
+    /// Constructor - creates playboard object.
+    ///
+    /// Returns `Ok(Playboard)` on success, otherwise returns an error.
+    /// 
+    /// # Errors
+    /// 
+    /// Returns [`InvalidPlayboardSize`] if the given size is not an odd number.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// let playboard: Playboard = match Playboard::new::<PLAYBOARD_ROW_COL_SIZE>() {
+    ///     Ok(playboard) => playboard,
+    ///     Err(e) => /* handle_error */
+    /// }
+    /// ```
     pub fn new<const ROW_COL_SIZE: usize>() -> Result<Self, InvalidPlayboardSize<'static>> {
         let size: usize = ROW_COL_SIZE * ROW_COL_SIZE;
 
@@ -79,6 +114,14 @@ impl Playboard {
         Ok(Self { grid, row_col_size: ROW_COL_SIZE, size })
     }
 
+
+    /// Check if symbol can be placed on 2D playboard position. Position must be valid and field empty.
+    ///
+    /// # Arguments
+    ///
+    /// * `row` - Row in 2D playboard position.
+    /// * `col` - Column in 2D playboard position.
+    ///
     fn check_validity_of_indexes(&self, row: usize, col: usize) -> bool {
         row < self.row_col_size
             && col < self.row_col_size
@@ -171,6 +214,7 @@ impl Playboard {
     }
 }
 
+/// Free function that is used to display Playboard as a pseudographical output ()
 pub fn display_board(playboard: MutexGuard<Playboard>, row_col_size: usize) {
     let format = Format::new(PLAYBOARD_GRID_WIDTH, PLAYBOARD_GRID_HEIGHT);
 

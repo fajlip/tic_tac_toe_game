@@ -1,5 +1,3 @@
-#![feature(array_chunks)]
-
 #[macro_use]
 extern crate clap;
 extern crate quickcheck;
